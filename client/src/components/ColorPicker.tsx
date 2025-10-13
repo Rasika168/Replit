@@ -5,8 +5,15 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { X } from 'lucide-react';
+import { X, Circle, Square, Waves } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface ColorPickerProps {
   point: GradientPoint;
@@ -214,6 +221,35 @@ export default function ColorPicker({ point, onUpdate, onClose, hideClose }: Col
         </Tabs>
 
         <div>
+          <Label className="text-xs uppercase tracking-wide mb-2 block">Shape</Label>
+          <Select value={point.shape} onValueChange={(value) => onUpdate({ shape: value as 'blob' | 'circle' | 'square' })}>
+            <SelectTrigger data-testid="select-shape">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="blob">
+                <div className="flex items-center gap-2">
+                  <Waves className="w-4 h-4" />
+                  Blob
+                </div>
+              </SelectItem>
+              <SelectItem value="circle">
+                <div className="flex items-center gap-2">
+                  <Circle className="w-4 h-4" />
+                  Circle
+                </div>
+              </SelectItem>
+              <SelectItem value="square">
+                <div className="flex items-center gap-2">
+                  <Square className="w-4 h-4" />
+                  Square
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
           <div className="flex items-center justify-between mb-1">
             <Label className="text-xs uppercase tracking-wide">Opacity</Label>
             <span className="text-xs text-muted-foreground font-mono" data-testid="text-opacity">
@@ -262,6 +298,47 @@ export default function ColorPicker({ point, onUpdate, onClose, hideClose }: Col
               <Label htmlFor="hard" className="text-sm font-normal cursor-pointer">Hard Edge</Label>
             </div>
           </RadioGroup>
+        </div>
+
+        <div>
+          <Label className="text-xs uppercase tracking-wide mb-2 block">
+            Gradient Direction
+            <span className="text-muted-foreground ml-1">(Focus Point)</span>
+          </Label>
+          <div className="text-xs text-muted-foreground mb-2">
+            Drag the pink handle on canvas to adjust gradient direction
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Focus X</Label>
+              <Input
+                type="number"
+                value={Math.round(point.focusX)}
+                onChange={(e) => onUpdate({ focusX: parseInt(e.target.value) || 0 })}
+                className="mt-1"
+                data-testid="input-focus-x"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Focus Y</Label>
+              <Input
+                type="number"
+                value={Math.round(point.focusY)}
+                onChange={(e) => onUpdate({ focusY: parseInt(e.target.value) || 0 })}
+                className="mt-1"
+                data-testid="input-focus-y"
+              />
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full mt-2"
+            onClick={() => onUpdate({ focusX: 0, focusY: 0 })}
+            data-testid="button-reset-focus"
+          >
+            Reset Focus
+          </Button>
         </div>
       </div>
     </div>

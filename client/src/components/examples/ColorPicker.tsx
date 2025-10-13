@@ -11,6 +11,9 @@ export default function ColorPickerExample() {
     opacity: 1,
     radius: 150,
     edgeType: 'soft',
+    shape: 'blob',
+    focusX: 0,
+    focusY: 0,
   });
 
   return (

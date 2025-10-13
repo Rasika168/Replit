@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Plus, Minus, Grid3x3, Download, Undo2, Redo2, Eye, EyeOff, Trash2, Copy } from 'lucide-react';
+import { Plus, Minus, Download, Undo2, Redo2, Eye, EyeOff, Trash2, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
@@ -17,6 +17,13 @@ import {
 } from '@/components/ui/tooltip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import ColorPicker from './ColorPicker';
 
 export interface GradientPoint {
@@ -27,6 +34,9 @@ export interface GradientPoint {
   opacity: number;
   radius: number;
   edgeType: 'soft' | 'hard';
+  shape: 'blob' | 'circle' | 'square';
+  focusX: number;
+  focusY: number;
 }
 
 interface GradientCanvasProps {
@@ -35,11 +45,12 @@ interface GradientCanvasProps {
 
 export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const textCanvasRef = useRef<HTMLCanvasElement>(null);
   const [points, setPoints] = useState<GradientPoint[]>([]);
   const [selectedPoint, setSelectedPoint] = useState<string | null>(null);
   const [draggingPoint, setDraggingPoint] = useState<string | null>(null);
   const [draggingRadius, setDraggingRadius] = useState<string | null>(null);
+  const [draggingFocus, setDraggingFocus] = useState<string | null>(null);
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -51,6 +62,15 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
   const [backgroundColor, setBackgroundColor] = useState('#333333');
   const [history, setHistory] = useState<GradientPoint[][]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+
+  const [topLabel, setTopLabel] = useState('Sustainability');
+  const [rightLabel, setRightLabel] = useState('Price');
+  const [bottomLabel, setBottomLabel] = useState('People');
+  const [leftLabel, setLeftLabel] = useState('Quality');
+
+  const [fontFamily, setFontFamily] = useState('Satoshi');
+  const [fontSize, setFontSize] = useState(14);
+  const [fontColor, setFontColor] = useState('#ffffff');
 
   const saveToHistory = useCallback((newPoints: GradientPoint[]) => {
     const newHistory = history.slice(0, historyIndex + 1);
@@ -76,18 +96,21 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
   const addPoint = useCallback((x: number, y: number) => {
     const newPoint: GradientPoint = {
       id: `point-${Date.now()}`,
-      x,
-      y,
+      x: x - pan.x,
+      y: y - pan.y,
       color: '#3b82f6',
       opacity: 1,
       radius: 150,
       edgeType: 'soft',
+      shape: 'blob',
+      focusX: 0,
+      focusY: 0,
     };
     const newPoints = [...points, newPoint];
     setPoints(newPoints);
     saveToHistory(newPoints);
     setSelectedPoint(newPoint.id);
-  }, [points, saveToHistory]);
+  }, [points, saveToHistory, pan]);
 
   const duplicatePoint = useCallback((pointId: string) => {
     const point = points.find(p => p.id === pointId);
@@ -136,7 +159,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
       ctx.strokeStyle = `rgba(64, 64, 64, ${gridOpacity})`;
       ctx.lineWidth = 1;
       
-      const gridSpacing = gridSize * zoom;
+      const gridSpacing = gridSize;
       const offsetX = pan.x % gridSpacing;
       const offsetY = pan.y % gridSpacing;
       
@@ -156,26 +179,68 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
     }
 
     points.forEach(point => {
-      const gradient = ctx.createRadialGradient(
-        point.x + pan.x, point.y + pan.y, 0,
-        point.x + pan.x, point.y + pan.y, point.radius * zoom
-      );
+      const screenX = point.x + pan.x;
+      const screenY = point.y + pan.y;
+      const focusX = screenX + point.focusX;
+      const focusY = screenY + point.focusY;
       
-      const color = hexToRgb(point.color);
-      if (color) {
-        if (point.edgeType === 'soft') {
-          gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${point.opacity})`);
-          gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
-        } else {
-          gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${point.opacity})`);
-          gradient.addColorStop(0.8, `rgba(${color.r}, ${color.g}, ${color.b}, ${point.opacity})`);
-          gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
-        }
+      if (point.shape === 'blob') {
+        const gradient = ctx.createRadialGradient(
+          focusX, focusY, 0,
+          screenX, screenY, point.radius
+        );
         
-        ctx.globalCompositeOperation = 'screen';
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, width, height);
-        ctx.globalCompositeOperation = 'source-over';
+        const color = hexToRgb(point.color);
+        if (color) {
+          if (point.edgeType === 'soft') {
+            gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${point.opacity})`);
+            gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
+          } else {
+            gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${point.opacity})`);
+            gradient.addColorStop(0.8, `rgba(${color.r}, ${color.g}, ${color.b}, ${point.opacity})`);
+            gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
+          }
+          
+          ctx.globalCompositeOperation = 'screen';
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, width, height);
+          ctx.globalCompositeOperation = 'source-over';
+        }
+      } else if (point.shape === 'circle') {
+        const gradient = ctx.createRadialGradient(
+          focusX, focusY, 0,
+          screenX, screenY, point.radius
+        );
+        
+        const color = hexToRgb(point.color);
+        if (color) {
+          gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${point.opacity})`);
+          gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
+          
+          ctx.globalCompositeOperation = 'screen';
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(screenX, screenY, point.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalCompositeOperation = 'source-over';
+        }
+      } else if (point.shape === 'square') {
+        const color = hexToRgb(point.color);
+        if (color) {
+          const size = point.radius * 2;
+          const gradient = ctx.createLinearGradient(
+            screenX - size / 2, screenY - size / 2,
+            screenX + size / 2, screenY + size / 2
+          );
+          
+          gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${point.opacity})`);
+          gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
+          
+          ctx.globalCompositeOperation = 'screen';
+          ctx.fillStyle = gradient;
+          ctx.fillRect(screenX - size / 2, screenY - size / 2, size, size);
+          ctx.globalCompositeOperation = 'source-over';
+        }
       }
     });
 
@@ -197,23 +262,79 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
           ctx.strokeStyle = 'rgba(59, 130, 246, 0.3)';
           ctx.lineWidth = 1;
           ctx.setLineDash([5, 5]);
-          ctx.beginPath();
-          ctx.arc(screenX, screenY, point.radius * zoom, 0, Math.PI * 2);
-          ctx.stroke();
+          
+          if (point.shape === 'circle' || point.shape === 'blob') {
+            ctx.beginPath();
+            ctx.arc(screenX, screenY, point.radius, 0, Math.PI * 2);
+            ctx.stroke();
+          } else if (point.shape === 'square') {
+            const size = point.radius * 2;
+            ctx.strokeRect(screenX - size / 2, screenY - size / 2, size, size);
+          }
+          
           ctx.setLineDash([]);
 
           ctx.fillStyle = '#3b82f6';
           ctx.beginPath();
-          ctx.arc(screenX + point.radius * zoom, screenY, 6, 0, Math.PI * 2);
+          ctx.arc(screenX + point.radius, screenY, 6, 0, Math.PI * 2);
           ctx.fill();
+
+          const focusX = screenX + point.focusX;
+          const focusY = screenY + point.focusY;
+          ctx.fillStyle = '#ec4899';
+          ctx.beginPath();
+          ctx.arc(focusX, focusY, 6, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.strokeStyle = '#ec4899';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([3, 3]);
+          ctx.beginPath();
+          ctx.moveTo(screenX, screenY);
+          ctx.lineTo(focusX, focusY);
+          ctx.stroke();
+          ctx.setLineDash([]);
         }
       });
     }
-  }, [points, selectedPoint, zoom, pan, showGrid, gridSize, gridOpacity, showOverlays, backgroundColor]);
+  }, [points, selectedPoint, pan, showGrid, gridSize, gridOpacity, showOverlays, backgroundColor]);
+
+  const renderLabels = useCallback(() => {
+    const canvas = textCanvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const { width, height } = canvas;
+    ctx.clearRect(0, 0, width, height);
+
+    ctx.fillStyle = fontColor;
+    ctx.font = `${fontSize}px ${fontFamily}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    ctx.fillText(topLabel, width / 2, 20);
+    ctx.save();
+    ctx.translate(width - 20, height / 2);
+    ctx.rotate(Math.PI / 2);
+    ctx.fillText(rightLabel, 0, 0);
+    ctx.restore();
+    ctx.fillText(bottomLabel, width / 2, height - 20);
+    ctx.save();
+    ctx.translate(20, height / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText(leftLabel, 0, 0);
+    ctx.restore();
+  }, [topLabel, rightLabel, bottomLabel, leftLabel, fontFamily, fontSize, fontColor]);
 
   useEffect(() => {
     renderGradient();
   }, [renderGradient]);
+
+  useEffect(() => {
+    renderLabels();
+  }, [renderLabels]);
 
   useEffect(() => {
     if (onPointsChange) {
@@ -222,37 +343,32 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
   }, [points, onPointsChange]);
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (e.button === 1 || e.shiftKey) return;
+    if (isPanning || draggingPoint || draggingRadius || draggingFocus) return;
     
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left - pan.x;
-    const y = e.clientY - rect.top - pan.y;
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
     const clickedPoint = points.find(p => {
-      const distance = Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2);
+      const screenX = p.x + pan.x;
+      const screenY = p.y + pan.y;
+      const distance = Math.sqrt((screenX - x) ** 2 + (screenY - y) ** 2);
       return distance <= 8;
     });
 
     if (clickedPoint) {
       setSelectedPoint(clickedPoint.id);
-    } else {
-      const clickedRadius = points.find(p => {
-        if (p.id !== selectedPoint) return false;
-        const distance = Math.sqrt((p.x + p.radius * zoom - x) ** 2 + (p.y - y) ** 2);
-        return distance <= 6;
-      });
-
-      if (!clickedRadius) {
-        addPoint(x, y);
-      }
+      return;
     }
+
+    addPoint(x, y);
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (e.button === 1 || e.shiftKey) {
+    if (e.shiftKey) {
       setIsPanning(true);
       setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
       return;
@@ -262,27 +378,45 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left - pan.x;
-    const y = e.clientY - rect.top - pan.y;
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
     const clickedPoint = points.find(p => {
-      const distance = Math.sqrt((p.x - x) ** 2 + (p.y - y) ** 2);
+      const screenX = p.x + pan.x;
+      const screenY = p.y + pan.y;
+      const distance = Math.sqrt((screenX - x) ** 2 + (screenY - y) ** 2);
       return distance <= 8;
     });
 
     if (clickedPoint) {
       setDraggingPoint(clickedPoint.id);
+      setSelectedPoint(clickedPoint.id);
       return;
     }
 
     const clickedRadius = points.find(p => {
       if (p.id !== selectedPoint) return false;
-      const distance = Math.sqrt((p.x + p.radius * zoom - x) ** 2 + (p.y - y) ** 2);
+      const screenX = p.x + pan.x;
+      const screenY = p.y + pan.y;
+      const distance = Math.sqrt((screenX + p.radius - x) ** 2 + (screenY - y) ** 2);
       return distance <= 6;
     });
 
     if (clickedRadius) {
       setDraggingRadius(clickedRadius.id);
+      return;
+    }
+
+    const clickedFocus = points.find(p => {
+      if (p.id !== selectedPoint) return false;
+      const focusX = p.x + pan.x + p.focusX;
+      const focusY = p.y + pan.y + p.focusY;
+      const distance = Math.sqrt((focusX - x) ** 2 + (focusY - y) ** 2);
+      return distance <= 6;
+    });
+
+    if (clickedFocus) {
+      setDraggingFocus(clickedFocus.id);
     }
   };
 
@@ -299,26 +433,39 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
     }
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left - pan.x;
-    const y = e.clientY - rect.top - pan.y;
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
     if (draggingPoint) {
-      updatePoint(draggingPoint, { x, y });
+      updatePoint(draggingPoint, { x: x - pan.x, y: y - pan.y });
     } else if (draggingRadius) {
       const point = points.find(p => p.id === draggingRadius);
       if (point) {
-        const newRadius = Math.sqrt((x - point.x) ** 2 + (y - point.y) ** 2) / zoom;
+        const screenX = point.x + pan.x;
+        const screenY = point.y + pan.y;
+        const newRadius = Math.sqrt((x - screenX) ** 2 + (y - screenY) ** 2);
         updatePoint(draggingRadius, { radius: Math.max(20, newRadius) });
+      }
+    } else if (draggingFocus) {
+      const point = points.find(p => p.id === draggingFocus);
+      if (point) {
+        const screenX = point.x + pan.x;
+        const screenY = point.y + pan.y;
+        updatePoint(draggingFocus, { 
+          focusX: x - screenX, 
+          focusY: y - screenY 
+        });
       }
     }
   };
 
   const handleMouseUp = () => {
-    if (draggingPoint || draggingRadius) {
+    if (draggingPoint || draggingRadius || draggingFocus) {
       saveToHistory(points);
     }
     setDraggingPoint(null);
     setDraggingRadius(null);
+    setDraggingFocus(null);
     setIsPanning(false);
   };
 
@@ -387,21 +534,30 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
           </div>
         </header>
 
-        <div className="relative flex-1 overflow-hidden" ref={containerRef}>
+        <div className="relative flex-1 overflow-hidden">
           <ContextMenu>
             <ContextMenuTrigger asChild>
-              <canvas
-                ref={canvasRef}
-                width={1200}
-                height={800}
-                className="w-full h-full cursor-crosshair"
-                onClick={handleCanvasClick}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
-                data-testid="canvas-gradient"
-              />
+              <div className="relative w-full h-full">
+                <canvas
+                  ref={canvasRef}
+                  width={1200}
+                  height={800}
+                  className="absolute inset-0 w-full h-full cursor-crosshair"
+                  onClick={handleCanvasClick}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseUp}
+                  data-testid="canvas-gradient"
+                />
+                <canvas
+                  ref={textCanvasRef}
+                  width={1200}
+                  height={800}
+                  className="absolute inset-0 w-full h-full pointer-events-none"
+                  data-testid="canvas-labels"
+                />
+              </div>
             </ContextMenuTrigger>
             <ContextMenuContent>
               {selectedPoint && (
@@ -448,7 +604,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
           <TabsList className="grid w-full grid-cols-3 rounded-none border-b border-border bg-transparent h-12">
             <TabsTrigger value="points" data-testid="tab-points">Points</TabsTrigger>
             <TabsTrigger value="canvas" data-testid="tab-canvas">Canvas</TabsTrigger>
-            <TabsTrigger value="export" data-testid="tab-export">Export</TabsTrigger>
+            <TabsTrigger value="labels" data-testid="tab-labels">Labels</TabsTrigger>
           </TabsList>
 
           <TabsContent value="points" className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
@@ -608,9 +764,9 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
             </div>
 
             <div className="pt-4 border-t border-border">
-              <h3 className="text-xs font-semibold uppercase tracking-wide mb-3">Pan & Zoom</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wide mb-3">Pan Controls</h3>
               <p className="text-xs text-muted-foreground mb-3">
-                Hold Shift or Middle Mouse to pan. Use zoom controls or scroll wheel.
+                Hold Shift and drag to pan around the canvas.
               </p>
               <Button
                 variant="outline"
@@ -626,46 +782,105 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
             </div>
           </TabsContent>
 
-          <TabsContent value="export" className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
+          <TabsContent value="labels" className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wide mb-3">Export Options</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wide mb-3">Quadrant Labels</h3>
               
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs uppercase tracking-wide">Include Grid</Label>
-                  <Switch checked={showGrid} onCheckedChange={setShowGrid} data-testid="switch-export-grid" />
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="top-label" className="text-xs uppercase tracking-wide">Top Label</Label>
+                  <Input
+                    id="top-label"
+                    value={topLabel}
+                    onChange={(e) => setTopLabel(e.target.value)}
+                    className="mt-1"
+                    data-testid="input-top-label"
+                  />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs uppercase tracking-wide">Include Overlays</Label>
-                  <Switch checked={showOverlays} onCheckedChange={setShowOverlays} data-testid="switch-export-overlays" />
+                <div>
+                  <Label htmlFor="right-label" className="text-xs uppercase tracking-wide">Right Label</Label>
+                  <Input
+                    id="right-label"
+                    value={rightLabel}
+                    onChange={(e) => setRightLabel(e.target.value)}
+                    className="mt-1"
+                    data-testid="input-right-label"
+                  />
                 </div>
 
-                <Button
-                  className="w-full"
-                  onClick={handleExport}
-                  data-testid="button-export-png"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Export as PNG
-                </Button>
+                <div>
+                  <Label htmlFor="bottom-label" className="text-xs uppercase tracking-wide">Bottom Label</Label>
+                  <Input
+                    id="bottom-label"
+                    value={bottomLabel}
+                    onChange={(e) => setBottomLabel(e.target.value)}
+                    className="mt-1"
+                    data-testid="input-bottom-label"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="left-label" className="text-xs uppercase tracking-wide">Left Label</Label>
+                  <Input
+                    id="left-label"
+                    value={leftLabel}
+                    onChange={(e) => setLeftLabel(e.target.value)}
+                    className="mt-1"
+                    data-testid="input-left-label"
+                  />
+                </div>
               </div>
             </div>
 
             <div className="pt-4 border-t border-border">
-              <h3 className="text-xs font-semibold uppercase tracking-wide mb-3">Gradient Info</h3>
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Total Points:</span>
-                  <span className="font-mono" data-testid="text-point-count">{points.length}</span>
+              <h3 className="text-xs font-semibold uppercase tracking-wide mb-3">Typography</h3>
+              
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="font-family" className="text-xs uppercase tracking-wide">Font Family</Label>
+                  <Select value={fontFamily} onValueChange={setFontFamily}>
+                    <SelectTrigger id="font-family" className="mt-1" data-testid="select-font-family">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Satoshi">Satoshi</SelectItem>
+                      <SelectItem value="Inter">Inter</SelectItem>
+                      <SelectItem value="Roboto">Roboto</SelectItem>
+                      <SelectItem value="Arial">Arial</SelectItem>
+                      <SelectItem value="Georgia">Georgia</SelectItem>
+                      <SelectItem value="Times New Roman">Times New Roman</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Canvas Size:</span>
-                  <span className="font-mono">1200 × 800</span>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label className="text-xs uppercase tracking-wide">Font Size</Label>
+                    <span className="text-xs text-muted-foreground font-mono" data-testid="text-font-size">
+                      {fontSize}px
+                    </span>
+                  </div>
+                  <Slider
+                    value={[fontSize]}
+                    onValueChange={([v]) => setFontSize(v)}
+                    min={10}
+                    max={32}
+                    step={1}
+                    data-testid="slider-font-size"
+                  />
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Zoom Level:</span>
-                  <span className="font-mono">{Math.round(zoom * 100)}%</span>
+
+                <div>
+                  <Label htmlFor="font-color" className="text-xs uppercase tracking-wide">Font Color</Label>
+                  <Input
+                    id="font-color"
+                    type="color"
+                    value={fontColor}
+                    onChange={(e) => setFontColor(e.target.value)}
+                    className="h-10 mt-1"
+                    data-testid="input-font-color"
+                  />
                 </div>
               </div>
             </div>
