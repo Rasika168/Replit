@@ -1,0 +1,334 @@
+import { useState } from 'react';
+import { GradientPoint } from './GradientCanvas';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { X } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+
+interface ColorPickerProps {
+  point: GradientPoint;
+  onUpdate: (updates: Partial<GradientPoint>) => void;
+  onClose: () => void;
+}
+
+export default function ColorPicker({ point, onUpdate, onClose }: ColorPickerProps) {
+  const [hexInput, setHexInput] = useState(point.color);
+
+  const handleHexChange = (value: string) => {
+    setHexInput(value);
+    if (/^#[0-9A-F]{6}$/i.test(value)) {
+      onUpdate({ color: value });
+    }
+  };
+
+  const rgb = hexToRgb(point.color);
+  const hsb = rgbToHsb(rgb?.r || 0, rgb?.g || 0, rgb?.b || 0);
+
+  const handleHsbChange = (h?: number, s?: number, b?: number) => {
+    const newHsb = {
+      h: h !== undefined ? h : hsb.h,
+      s: s !== undefined ? s : hsb.s,
+      b: b !== undefined ? b : hsb.b,
+    };
+    const newRgb = hsbToRgb(newHsb.h, newHsb.s, newHsb.b);
+    const hex = rgbToHex(newRgb.r, newRgb.g, newRgb.b);
+    setHexInput(hex);
+    onUpdate({ color: hex });
+  };
+
+  const handleRgbChange = (r?: number, g?: number, b?: number) => {
+    const newRgb = {
+      r: r !== undefined ? r : rgb?.r || 0,
+      g: g !== undefined ? g : rgb?.g || 0,
+      b: b !== undefined ? b : rgb?.b || 0,
+    };
+    const hex = rgbToHex(newRgb.r, newRgb.g, newRgb.b);
+    setHexInput(hex);
+    onUpdate({ color: hex });
+  };
+
+  const presetColors = [
+    '#3b82f6', '#8b5cf6', '#ec4899', '#ef4444',
+    '#f97316', '#f59e0b', '#84cc16', '#10b981',
+    '#14b8a6', '#06b6d4', '#0ea5e9', '#6366f1',
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold uppercase tracking-wide">Point Properties</h3>
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={onClose}
+          className="h-8 w-8"
+          data-testid="button-close-picker"
+        >
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+
+      <div className="space-y-3">
+        <div>
+          <Label className="text-xs uppercase tracking-wide mb-2 block">Color</Label>
+          <div className="grid grid-cols-6 gap-2 mb-3">
+            {presetColors.map(color => (
+              <button
+                key={color}
+                className="w-full aspect-square rounded-md border-2 hover-elevate active-elevate-2"
+                style={{
+                  backgroundColor: color,
+                  borderColor: point.color === color ? '#3b82f6' : 'transparent',
+                }}
+                onClick={() => {
+                  setHexInput(color);
+                  onUpdate({ color });
+                }}
+                data-testid={`preset-color-${color}`}
+              />
+            ))}
+          </div>
+        </div>
+
+        <Tabs defaultValue="hex" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="hex" data-testid="tab-hex">HEX</TabsTrigger>
+            <TabsTrigger value="hsb" data-testid="tab-hsb">HSB</TabsTrigger>
+            <TabsTrigger value="rgb" data-testid="tab-rgb">RGB</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="hex" className="space-y-3">
+            <div>
+              <Label htmlFor="hex" className="text-xs">HEX Value</Label>
+              <Input
+                id="hex"
+                value={hexInput}
+                onChange={(e) => handleHexChange(e.target.value)}
+                className="font-mono mt-1"
+                data-testid="input-hex"
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="hsb" className="space-y-3">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <Label className="text-xs">Hue</Label>
+                <span className="text-xs text-muted-foreground font-mono" data-testid="text-hue">
+                  {Math.round(hsb.h)}°
+                </span>
+              </div>
+              <Slider
+                value={[hsb.h]}
+                onValueChange={([v]) => handleHsbChange(v)}
+                max={360}
+                step={1}
+                data-testid="slider-hue"
+              />
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <Label className="text-xs">Saturation</Label>
+                <span className="text-xs text-muted-foreground font-mono" data-testid="text-saturation">
+                  {Math.round(hsb.s)}%
+                </span>
+              </div>
+              <Slider
+                value={[hsb.s]}
+                onValueChange={([v]) => handleHsbChange(undefined, v)}
+                max={100}
+                step={1}
+                data-testid="slider-saturation"
+              />
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <Label className="text-xs">Brightness</Label>
+                <span className="text-xs text-muted-foreground font-mono" data-testid="text-brightness">
+                  {Math.round(hsb.b)}%
+                </span>
+              </div>
+              <Slider
+                value={[hsb.b]}
+                onValueChange={([v]) => handleHsbChange(undefined, undefined, v)}
+                max={100}
+                step={1}
+                data-testid="slider-brightness"
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="rgb" className="space-y-3">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <Label className="text-xs">Red</Label>
+                <span className="text-xs text-muted-foreground font-mono" data-testid="text-red">
+                  {rgb?.r || 0}
+                </span>
+              </div>
+              <Slider
+                value={[rgb?.r || 0]}
+                onValueChange={([v]) => handleRgbChange(v)}
+                max={255}
+                step={1}
+                data-testid="slider-red"
+              />
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <Label className="text-xs">Green</Label>
+                <span className="text-xs text-muted-foreground font-mono" data-testid="text-green">
+                  {rgb?.g || 0}
+                </span>
+              </div>
+              <Slider
+                value={[rgb?.g || 0]}
+                onValueChange={([v]) => handleRgbChange(undefined, v)}
+                max={255}
+                step={1}
+                data-testid="slider-green"
+              />
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <Label className="text-xs">Blue</Label>
+                <span className="text-xs text-muted-foreground font-mono" data-testid="text-blue">
+                  {rgb?.b || 0}
+                </span>
+              </div>
+              <Slider
+                value={[rgb?.b || 0]}
+                onValueChange={([v]) => handleRgbChange(undefined, undefined, v)}
+                max={255}
+                step={1}
+                data-testid="slider-blue"
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <Label className="text-xs uppercase tracking-wide">Opacity</Label>
+            <span className="text-xs text-muted-foreground font-mono" data-testid="text-opacity">
+              {Math.round(point.opacity * 100)}%
+            </span>
+          </div>
+          <Slider
+            value={[point.opacity * 100]}
+            onValueChange={([v]) => onUpdate({ opacity: v / 100 })}
+            max={100}
+            step={1}
+            data-testid="slider-opacity"
+          />
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <Label className="text-xs uppercase tracking-wide">Influence Radius</Label>
+            <span className="text-xs text-muted-foreground font-mono" data-testid="text-radius">
+              {Math.round(point.radius)}px
+            </span>
+          </div>
+          <Slider
+            value={[point.radius]}
+            onValueChange={([v]) => onUpdate({ radius: v })}
+            min={20}
+            max={400}
+            step={5}
+            data-testid="slider-radius"
+          />
+        </div>
+
+        <div>
+          <Label className="text-xs uppercase tracking-wide mb-2 block">Edge Type</Label>
+          <RadioGroup
+            value={point.edgeType}
+            onValueChange={(value) => onUpdate({ edgeType: value as 'soft' | 'hard' })}
+            data-testid="radio-edge-type"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="soft" id="soft" data-testid="radio-soft" />
+              <Label htmlFor="soft" className="text-sm font-normal cursor-pointer">Soft Edge</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="hard" id="hard" data-testid="radio-hard" />
+              <Label htmlFor="hard" className="text-sm font-normal cursor-pointer">Hard Edge</Label>
+            </div>
+          </RadioGroup>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  return '#' + [r, g, b].map(x => {
+    const hex = x.toString(16);
+    return hex.length === 1 ? '0' + hex : hex;
+  }).join('');
+}
+
+function rgbToHsb(r: number, g: number, b: number) {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const diff = max - min;
+  let h = 0;
+  const s = max === 0 ? 0 : (diff / max) * 100;
+  const v = max * 100;
+
+  if (diff !== 0) {
+    if (max === r) {
+      h = ((g - b) / diff + (g < b ? 6 : 0)) / 6;
+    } else if (max === g) {
+      h = ((b - r) / diff + 2) / 6;
+    } else {
+      h = ((r - g) / diff + 4) / 6;
+    }
+  }
+
+  return { h: h * 360, s, b: v };
+}
+
+function hsbToRgb(h: number, s: number, b: number) {
+  h /= 360;
+  s /= 100;
+  b /= 100;
+
+  const i = Math.floor(h * 6);
+  const f = h * 6 - i;
+  const p = b * (1 - s);
+  const q = b * (1 - f * s);
+  const t = b * (1 - (1 - f) * s);
+
+  let r = 0, g = 0, bl = 0;
+  switch (i % 6) {
+    case 0: r = b; g = t; bl = p; break;
+    case 1: r = q; g = b; bl = p; break;
+    case 2: r = p; g = b; bl = t; break;
+    case 3: r = p; g = q; bl = b; break;
+    case 4: r = t; g = p; bl = b; break;
+    case 5: r = b; g = p; bl = q; break;
+  }
+
+  return {
+    r: Math.round(r * 255),
+    g: Math.round(g * 255),
+    b: Math.round(bl * 255)
+  };
+}
