@@ -11,10 +11,11 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 interface ColorPickerProps {
   point: GradientPoint;
   onUpdate: (updates: Partial<GradientPoint>) => void;
-  onClose: () => void;
+  onClose?: () => void;
+  hideClose?: boolean;
 }
 
-export default function ColorPicker({ point, onUpdate, onClose }: ColorPickerProps) {
+export default function ColorPicker({ point, onUpdate, onClose, hideClose }: ColorPickerProps) {
   const [hexInput, setHexInput] = useState(point.color);
 
   const handleHexChange = (value: string) => {
@@ -58,18 +59,20 @@ export default function ColorPicker({ point, onUpdate, onClose }: ColorPickerPro
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold uppercase tracking-wide">Point Properties</h3>
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={onClose}
-          className="h-8 w-8"
-          data-testid="button-close-picker"
-        >
-          <X className="w-4 h-4" />
-        </Button>
-      </div>
+      {!hideClose && (
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-semibold uppercase tracking-wide">Point Properties</h3>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={onClose}
+            className="h-8 w-8"
+            data-testid="button-close-picker"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
 
       <div className="space-y-3">
         <div>
