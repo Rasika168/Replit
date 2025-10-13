@@ -62,6 +62,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
   const [backgroundColor, setBackgroundColor] = useState('#333333');
   const [history, setHistory] = useState<GradientPoint[][]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [cursorStyle, setCursorStyle] = useState('crosshair');
 
   const [topLabel, setTopLabel] = useState('Sustainability');
   const [rightLabel, setRightLabel] = useState('Price');
@@ -141,6 +142,44 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
     const newPoints = points.map(p => p.id === pointId ? { ...p, ...updates } : p);
     setPoints(newPoints);
   }, [points]);
+
+  const getCursorPosition = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    return { x, y };
+  }, []);
+
+  const getHoveredElement = useCallback((x: number, y: number) => {
+    for (const point of points) {
+      const screenX = point.x + pan.x;
+      const screenY = point.y + pan.y;
+      
+      const pointDistance = Math.sqrt((screenX - x) ** 2 + (screenY - y) ** 2);
+      if (pointDistance <= 8) {
+        return { type: 'point' as const, id: point.id };
+      }
+      
+      if (point.id === selectedPoint) {
+        const radiusDistance = Math.sqrt((screenX + point.radius - x) ** 2 + (screenY - y) ** 2);
+        if (radiusDistance <= 6) {
+          return { type: 'radius' as const, id: point.id };
+        }
+        
+        const focusX = screenX + point.focusX;
+        const focusY = screenY + point.focusY;
+        const focusDistance = Math.sqrt((focusX - x) ** 2 + (focusY - y) ** 2);
+        if (focusDistance <= 6) {
+          return { type: 'focus' as const, id: point.id };
+        }
+      }
+    }
+    return null;
+  }, [points, selectedPoint, pan]);
 
   const renderGradient = useCallback(() => {
     const canvas = canvasRef.current;
@@ -275,16 +314,22 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
           ctx.setLineDash([]);
 
           ctx.fillStyle = '#3b82f6';
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
           ctx.beginPath();
           ctx.arc(screenX + point.radius, screenY, 6, 0, Math.PI * 2);
           ctx.fill();
+          ctx.stroke();
 
           const focusX = screenX + point.focusX;
           const focusY = screenY + point.focusY;
           ctx.fillStyle = '#ec4899';
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
           ctx.beginPath();
           ctx.arc(focusX, focusY, 6, 0, Math.PI * 2);
           ctx.fill();
+          ctx.stroke();
           
           ctx.strokeStyle = '#ec4899';
           ctx.lineWidth = 1;
@@ -342,87 +387,82 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
     }
   }, [points, onPointsChange]);
 
+  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const pos = getCursorPosition(e);
+    if (!pos) return;
+
+    if (draggingPoint || draggingRadius || draggingFocus || isPanning) {
+      handleMouseMove(e);
+      return;
+    }
+
+    const hovered = getHoveredElement(pos.x, pos.y);
+    
+    if (e.shiftKey) {
+      setCursorStyle('grab');
+    } else if (hovered?.type === 'point') {
+      setCursorStyle('move');
+    } else if (hovered?.type === 'radius') {
+      setCursorStyle('nwse-resize');
+    } else if (hovered?.type === 'focus') {
+      setCursorStyle('crosshair');
+    } else {
+      setCursorStyle('crosshair');
+    }
+  };
+
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (isPanning || draggingPoint || draggingRadius || draggingFocus) return;
     
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const pos = getCursorPosition(e);
+    if (!pos) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const clickedPoint = points.find(p => {
-      const screenX = p.x + pan.x;
-      const screenY = p.y + pan.y;
-      const distance = Math.sqrt((screenX - x) ** 2 + (screenY - y) ** 2);
-      return distance <= 8;
-    });
-
-    if (clickedPoint) {
-      setSelectedPoint(clickedPoint.id);
+    const hovered = getHoveredElement(pos.x, pos.y);
+    
+    if (hovered?.type === 'point') {
+      setSelectedPoint(hovered.id);
       return;
     }
 
-    addPoint(x, y);
+    if (!hovered) {
+      addPoint(pos.x, pos.y);
+    }
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const pos = getCursorPosition(e);
+    if (!pos) return;
+
     if (e.shiftKey) {
       setIsPanning(true);
       setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+      setCursorStyle('grabbing');
       return;
     }
 
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const clickedPoint = points.find(p => {
-      const screenX = p.x + pan.x;
-      const screenY = p.y + pan.y;
-      const distance = Math.sqrt((screenX - x) ** 2 + (screenY - y) ** 2);
-      return distance <= 8;
-    });
-
-    if (clickedPoint) {
-      setDraggingPoint(clickedPoint.id);
-      setSelectedPoint(clickedPoint.id);
+    const hovered = getHoveredElement(pos.x, pos.y);
+    
+    if (hovered?.type === 'point') {
+      setDraggingPoint(hovered.id);
+      setSelectedPoint(hovered.id);
+      setCursorStyle('grabbing');
       return;
     }
 
-    const clickedRadius = points.find(p => {
-      if (p.id !== selectedPoint) return false;
-      const screenX = p.x + pan.x;
-      const screenY = p.y + pan.y;
-      const distance = Math.sqrt((screenX + p.radius - x) ** 2 + (screenY - y) ** 2);
-      return distance <= 6;
-    });
-
-    if (clickedRadius) {
-      setDraggingRadius(clickedRadius.id);
+    if (hovered?.type === 'radius') {
+      setDraggingRadius(hovered.id);
       return;
     }
 
-    const clickedFocus = points.find(p => {
-      if (p.id !== selectedPoint) return false;
-      const focusX = p.x + pan.x + p.focusX;
-      const focusY = p.y + pan.y + p.focusY;
-      const distance = Math.sqrt((focusX - x) ** 2 + (focusY - y) ** 2);
-      return distance <= 6;
-    });
-
-    if (clickedFocus) {
-      setDraggingFocus(clickedFocus.id);
+    if (hovered?.type === 'focus') {
+      setDraggingFocus(hovered.id);
+      return;
     }
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const pos = getCursorPosition(e);
+    if (!pos) return;
 
     if (isPanning) {
       setPan({
@@ -432,18 +472,14 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
       return;
     }
 
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
     if (draggingPoint) {
-      updatePoint(draggingPoint, { x: x - pan.x, y: y - pan.y });
+      updatePoint(draggingPoint, { x: pos.x - pan.x, y: pos.y - pan.y });
     } else if (draggingRadius) {
       const point = points.find(p => p.id === draggingRadius);
       if (point) {
         const screenX = point.x + pan.x;
         const screenY = point.y + pan.y;
-        const newRadius = Math.sqrt((x - screenX) ** 2 + (y - screenY) ** 2);
+        const newRadius = Math.sqrt((pos.x - screenX) ** 2 + (pos.y - screenY) ** 2);
         updatePoint(draggingRadius, { radius: Math.max(20, newRadius) });
       }
     } else if (draggingFocus) {
@@ -452,8 +488,8 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
         const screenX = point.x + pan.x;
         const screenY = point.y + pan.y;
         updatePoint(draggingFocus, { 
-          focusX: x - screenX, 
-          focusY: y - screenY 
+          focusX: pos.x - screenX, 
+          focusY: pos.y - screenY 
         });
       }
     }
@@ -467,6 +503,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
     setDraggingRadius(null);
     setDraggingFocus(null);
     setIsPanning(false);
+    setCursorStyle('crosshair');
   };
 
   const handleExport = () => {
@@ -542,10 +579,11 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
                   ref={canvasRef}
                   width={1200}
                   height={800}
-                  className="absolute inset-0 w-full h-full cursor-crosshair"
+                  className="absolute inset-0 w-full h-full"
+                  style={{ cursor: cursorStyle }}
                   onClick={handleCanvasClick}
                   onMouseDown={handleMouseDown}
-                  onMouseMove={handleMouseMove}
+                  onMouseMove={handleCanvasMouseMove}
                   onMouseUp={handleMouseUp}
                   onMouseLeave={handleMouseUp}
                   data-testid="canvas-gradient"
@@ -595,6 +633,16 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
             >
               <Plus className="w-3 h-3" />
             </Button>
+          </div>
+
+          <div className="absolute top-4 left-4 bg-black/40 backdrop-blur-sm rounded-md px-3 py-2">
+            <p className="text-xs text-white">
+              {draggingPoint && '🔵 Moving Point'}
+              {draggingFocus && '💗 Adjusting Focus'}
+              {draggingRadius && '🔷 Adjusting Radius'}
+              {isPanning && '✋ Panning Canvas'}
+              {!draggingPoint && !draggingFocus && !draggingRadius && !isPanning && 'Hold Shift to Pan • Click to Add Point'}
+            </p>
           </div>
         </div>
       </div>
