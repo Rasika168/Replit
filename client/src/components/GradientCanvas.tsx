@@ -1,5 +1,5 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Plus, Minus, Download, Undo2, Redo2, Eye, EyeOff, Trash2, Copy } from 'lucide-react';
+import { Plus, Minus, Download, Undo2, Redo2, Eye, EyeOff, Trash2, Copy, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
@@ -37,6 +37,8 @@ export interface GradientPoint {
   shape: 'blob' | 'circle' | 'square';
   focusX: number;
   focusY: number;
+  gradientType: 'solid' | 'linear' | 'radial';
+  gradientColors: string[];
 }
 
 interface GradientCanvasProps {
@@ -72,6 +74,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
   const [fontFamily, setFontFamily] = useState('Satoshi');
   const [fontSize, setFontSize] = useState(14);
   const [fontColor, setFontColor] = useState('#ffffff');
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
   const saveToHistory = useCallback((newPoints: GradientPoint[]) => {
     const newHistory = history.slice(0, historyIndex + 1);
@@ -106,6 +109,8 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
       shape: 'blob',
       focusX: 0,
       focusY: 0,
+      gradientType: 'solid',
+      gradientColors: ['#3b82f6', '#8b5cf6'],
     };
     const newPoints = [...points, newPoint];
     setPoints(newPoints);
@@ -217,18 +222,70 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
       }
     }
 
+    // Draw center quadrant lines
+    ctx.strokeStyle = 'rgba(128, 128, 128, 0.4)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([10, 5]);
+    
+    // Vertical center line
+    ctx.beginPath();
+    ctx.moveTo(width / 2, 0);
+    ctx.lineTo(width / 2, height);
+    ctx.stroke();
+    
+    // Horizontal center line
+    ctx.beginPath();
+    ctx.moveTo(0, height / 2);
+    ctx.lineTo(width, height / 2);
+    ctx.stroke();
+    
+    ctx.setLineDash([]);
+
     points.forEach(point => {
       const screenX = point.x + pan.x;
       const screenY = point.y + pan.y;
       const focusX = screenX + point.focusX;
       const focusY = screenY + point.focusY;
       
-      if (point.shape === 'blob') {
-        const gradient = ctx.createRadialGradient(
+      // Determine colors based on gradient type
+      const colors = point.gradientType !== 'solid' && point.gradientColors?.length >= 2
+        ? point.gradientColors
+        : [point.color, point.color];
+      
+      // Create gradient based on gradientType, not shape
+      let gradient: CanvasGradient;
+      
+      if (point.gradientType === 'linear') {
+        // Linear gradient from focus to edge
+        const angle = Math.atan2(point.focusY, point.focusX);
+        const startX = screenX + Math.cos(angle) * point.radius;
+        const startY = screenY + Math.sin(angle) * point.radius;
+        const endX = screenX - Math.cos(angle) * point.radius;
+        const endY = screenY - Math.sin(angle) * point.radius;
+        gradient = ctx.createLinearGradient(startX, startY, endX, endY);
+      } else {
+        // Radial gradient (default for solid and radial)
+        gradient = ctx.createRadialGradient(
           focusX, focusY, 0,
           screenX, screenY, point.radius
         );
-        
+      }
+      
+      // Add color stops based on whether it's a multi-color gradient or solid
+      if (point.gradientType !== 'solid' && colors.length >= 2) {
+        // Multi-color gradient
+        colors.forEach((color, i) => {
+          const rgb = hexToRgb(color);
+          if (rgb) {
+            const position = i / (colors.length - 1);
+            const opacity = point.edgeType === 'soft' 
+              ? point.opacity * (1 - position)
+              : (position < 0.8 ? point.opacity : point.opacity * (1 - (position - 0.8) / 0.2));
+            gradient.addColorStop(position, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`);
+          }
+        });
+      } else {
+        // Single color gradient
         const color = hexToRgb(point.color);
         if (color) {
           if (point.edgeType === 'soft') {
@@ -239,48 +296,31 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
             gradient.addColorStop(0.8, `rgba(${color.r}, ${color.g}, ${color.b}, ${point.opacity})`);
             gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
           }
-          
-          ctx.globalCompositeOperation = 'screen';
-          ctx.fillStyle = gradient;
-          ctx.fillRect(0, 0, width, height);
-          ctx.globalCompositeOperation = 'source-over';
-        }
-      } else if (point.shape === 'circle') {
-        const gradient = ctx.createRadialGradient(
-          focusX, focusY, 0,
-          screenX, screenY, point.radius
-        );
-        
-        const color = hexToRgb(point.color);
-        if (color) {
-          gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${point.opacity})`);
-          gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
-          
-          ctx.globalCompositeOperation = 'screen';
-          ctx.fillStyle = gradient;
-          ctx.beginPath();
-          ctx.arc(screenX, screenY, point.radius, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.globalCompositeOperation = 'source-over';
-        }
-      } else if (point.shape === 'square') {
-        const color = hexToRgb(point.color);
-        if (color) {
-          const size = point.radius * 2;
-          const gradient = ctx.createLinearGradient(
-            screenX - size / 2, screenY - size / 2,
-            screenX + size / 2, screenY + size / 2
-          );
-          
-          gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${point.opacity})`);
-          gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
-          
-          ctx.globalCompositeOperation = 'screen';
-          ctx.fillStyle = gradient;
-          ctx.fillRect(screenX - size / 2, screenY - size / 2, size, size);
-          ctx.globalCompositeOperation = 'source-over';
         }
       }
+      
+      // Apply gradient based on shape
+      ctx.globalCompositeOperation = 'screen';
+      ctx.fillStyle = gradient;
+      
+      if (point.shape === 'blob') {
+        // For blob shapes, use clipping to constrain the gradient
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, point.radius, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.fillRect(screenX - point.radius, screenY - point.radius, point.radius * 2, point.radius * 2);
+        ctx.restore();
+      } else if (point.shape === 'circle') {
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, point.radius, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (point.shape === 'square') {
+        const size = point.radius * 2;
+        ctx.fillRect(screenX - size / 2, screenY - size / 2, size, size);
+      }
+      
+      ctx.globalCompositeOperation = 'source-over';
     });
 
     if (showOverlays) {
@@ -355,20 +395,33 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
     ctx.clearRect(0, 0, width, height);
 
     ctx.fillStyle = fontColor;
-    ctx.font = `${fontSize}px ${fontFamily}`;
+    ctx.font = `${fontSize}px ${fontFamily}, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
+    // Top label
     ctx.fillText(topLabel, width / 2, 20);
+    
+    // Right label - rotated text
     ctx.save();
     ctx.translate(width - 20, height / 2);
     ctx.rotate(Math.PI / 2);
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'center';
     ctx.fillText(rightLabel, 0, 0);
     ctx.restore();
+    
+    // Bottom label
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
     ctx.fillText(bottomLabel, width / 2, height - 20);
+    
+    // Left label - rotated text
     ctx.save();
     ctx.translate(20, height / 2);
     ctx.rotate(-Math.PI / 2);
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'center';
     ctx.fillText(leftLabel, 0, 0);
     ctx.restore();
   }, [topLabel, rightLabel, bottomLabel, leftLabel, fontFamily, fontSize, fontColor]);
@@ -567,6 +620,24 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Export PNG</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => {
+                    setIsDarkMode(!isDarkMode);
+                    setBackgroundColor(isDarkMode ? '#f5f5f5' : '#333333');
+                    setFontColor(isDarkMode ? '#000000' : '#ffffff');
+                  }}
+                  data-testid="button-theme-toggle"
+                >
+                  {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</TooltipContent>
             </Tooltip>
           </div>
         </header>

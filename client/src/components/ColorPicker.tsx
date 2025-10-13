@@ -83,7 +83,26 @@ export default function ColorPicker({ point, onUpdate, onClose, hideClose }: Col
 
       <div className="space-y-3">
         <div>
-          <Label className="text-xs uppercase tracking-wide mb-2 block">Color</Label>
+          <Label className="text-xs uppercase tracking-wide mb-2 block">Gradient Type</Label>
+          <Select 
+            value={point.gradientType} 
+            onValueChange={(value) => onUpdate({ gradientType: value as 'solid' | 'linear' | 'radial' })}
+          >
+            <SelectTrigger data-testid="select-gradient-type">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="solid">Solid Color</SelectItem>
+              <SelectItem value="linear">Linear Gradient</SelectItem>
+              <SelectItem value="radial">Radial Gradient</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label className="text-xs uppercase tracking-wide mb-2 block">
+            {point.gradientType !== 'solid' ? 'Gradient Colors' : 'Color'}
+          </Label>
           <div className="grid grid-cols-6 gap-2 mb-3">
             {presetColors.map(color => (
               <button
@@ -95,12 +114,70 @@ export default function ColorPicker({ point, onUpdate, onClose, hideClose }: Col
                 }}
                 onClick={() => {
                   setHexInput(color);
-                  onUpdate({ color });
+                  if (point.gradientType === 'solid') {
+                    onUpdate({ color });
+                  } else {
+                    // For gradients, update first color in gradient array
+                    const newColors = [...(point.gradientColors || [color, '#8b5cf6'])];
+                    newColors[0] = color;
+                    onUpdate({ color, gradientColors: newColors });
+                  }
                 }}
                 data-testid={`preset-color-${color}`}
               />
             ))}
           </div>
+          
+          {point.gradientType !== 'solid' && (
+            <div className="space-y-2 mt-3">
+              <Label className="text-xs">Gradient Colors</Label>
+              {(point.gradientColors || [point.color, '#8b5cf6']).map((color, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <div 
+                    className="w-8 h-8 rounded border-2 border-border"
+                    style={{ backgroundColor: color }}
+                  />
+                  <Input
+                    value={color}
+                    onChange={(e) => {
+                      const newColors = [...(point.gradientColors || [point.color, '#8b5cf6'])];
+                      newColors[index] = e.target.value;
+                      if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+                        onUpdate({ gradientColors: newColors });
+                      }
+                    }}
+                    className="flex-1 font-mono"
+                  />
+                  {index > 1 && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => {
+                        const newColors = (point.gradientColors || []).filter((_, i) => i !== index);
+                        onUpdate({ gradientColors: newColors });
+                      }}
+                      className="h-8 w-8"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              {(point.gradientColors || []).length < 5 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    const newColors = [...(point.gradientColors || [point.color, '#8b5cf6']), '#ec4899'];
+                    onUpdate({ gradientColors: newColors });
+                  }}
+                >
+                  Add Color
+                </Button>
+              )}
+            </div>
+          )}
         </div>
 
         <Tabs defaultValue="hex" className="w-full">
