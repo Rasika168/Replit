@@ -3,9 +3,16 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, Circle, Square } from 'lucide-react';
 import { GradientPoint, GradientStop } from './GradientCanvas';
 import GradientStopSlider from './GradientStopSlider';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface ImageCircleProps {
   point: GradientPoint;
@@ -49,11 +56,23 @@ export default function ImageCircle({ point, onUpdate }: ImageCircleProps) {
 
   const borderThickness = point.borderThickness || 8;
   const borderBlur = point.borderBlur || 0;
+  const imageShape = point.shape || 'circle';
+
+  const getShapeClasses = () => {
+    switch (imageShape) {
+      case 'circle':
+        return 'rounded-full';
+      case 'square':
+        return 'rounded-none';
+      default:
+        return 'rounded-full';
+    }
+  };
 
   return (
     <div className="space-y-4">
       <div>
-        <Label className="text-xs uppercase tracking-wide mb-2 block">Image Circle</Label>
+        <Label className="text-xs uppercase tracking-wide mb-2 block">Image Shape</Label>
         
         <div className="relative flex items-center justify-center p-4 border-2 border-dashed border-border rounded-lg">
           {previewUrl ? (
@@ -61,15 +80,15 @@ export default function ImageCircle({ point, onUpdate }: ImageCircleProps) {
               <div className="relative" style={{ width: '200px', height: '200px' }}>
                 {/* Gradient border with blur */}
                 <div 
-                  className="absolute inset-0 rounded-full"
+                  className={`absolute inset-0 ${getShapeClasses()}`}
                   style={{
                     background: getGradientCSS(),
                     filter: borderBlur > 0 ? `blur(${borderBlur}px)` : 'none',
                   }}
                 />
-                {/* Inner circle mask for image */}
+                {/* Inner shape mask for image */}
                 <div 
-                  className="absolute rounded-full bg-cover bg-center"
+                  className={`absolute ${getShapeClasses()} bg-cover bg-center`}
                   style={{ 
                     backgroundImage: `url(${previewUrl})`,
                     top: `${borderThickness}px`,
@@ -117,6 +136,29 @@ export default function ImageCircle({ point, onUpdate }: ImageCircleProps) {
 
       {previewUrl && (
         <>
+          <div className="pt-4 border-t border-border">
+            <Label className="text-xs uppercase tracking-wide mb-2 block">Shape</Label>
+            <Select value={imageShape} onValueChange={(value) => onUpdate({ shape: value as 'circle' | 'square' })}>
+              <SelectTrigger data-testid="select-image-shape">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="circle">
+                  <div className="flex items-center gap-2">
+                    <Circle className="w-4 h-4" />
+                    Circle
+                  </div>
+                </SelectItem>
+                <SelectItem value="square">
+                  <div className="flex items-center gap-2">
+                    <Square className="w-4 h-4" />
+                    Square
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="pt-4 border-t border-border">
             <h3 className="text-xs font-semibold uppercase tracking-wide mb-3">Border Gradient</h3>
             <GradientStopSlider
