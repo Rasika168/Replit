@@ -510,7 +510,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
     // Bottom label
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(bottomLabel, width / 2, height - 20);
+    ctx.fillText(bottomLabel, width / 2, height - 35);
     
     // Left label - rotated text
     ctx.save();
