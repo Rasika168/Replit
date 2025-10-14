@@ -30,7 +30,16 @@ export default function ImageCircle({ point, onUpdate }: ImageCircleProps) {
       reader.onloadend = () => {
         const dataUrl = reader.result as string;
         setPreviewUrl(dataUrl);
-        onUpdate({ image: dataUrl });
+        const imageShape = point.shape || 'circle';
+        if (imageShape === 'square') {
+          onUpdate({ 
+            image: dataUrl, 
+            width: point.width || point.radius * 2,
+            height: point.height || point.radius * 2
+          });
+        } else {
+          onUpdate({ image: dataUrl });
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -89,7 +98,7 @@ export default function ImageCircle({ point, onUpdate }: ImageCircleProps) {
                   className={`absolute inset-0 ${getShapeClasses()}`}
                   style={{
                     background: getGradientCSS(),
-                    filter: borderBlur > 0 ? `blur(${borderBlur}px)` : 'none',
+                    filter: borderBlur > 0 ? `blur(${borderBlur / 2}px)` : 'none',
                   }}
                 />
                 {/* Inner shape mask for image */}
@@ -97,10 +106,10 @@ export default function ImageCircle({ point, onUpdate }: ImageCircleProps) {
                   className={`absolute ${getShapeClasses()} bg-cover bg-center`}
                   style={{ 
                     backgroundImage: `url(${previewUrl})`,
-                    top: `${borderThickness}px`,
-                    left: `${borderThickness}px`,
-                    right: `${borderThickness}px`,
-                    bottom: `${borderThickness}px`,
+                    top: `${borderThickness / 2}px`,
+                    left: `${borderThickness / 2}px`,
+                    right: `${borderThickness / 2}px`,
+                    bottom: `${borderThickness / 2}px`,
                   }}
                   data-testid="image-circle-preview"
                 />
@@ -145,7 +154,17 @@ export default function ImageCircle({ point, onUpdate }: ImageCircleProps) {
           <div className="pt-4 border-t border-border space-y-4">
             <div>
               <Label className="text-xs uppercase tracking-wide mb-2 block">Shape</Label>
-              <Select value={imageShape} onValueChange={(value) => onUpdate({ shape: value as 'circle' | 'square' })}>
+              <Select value={imageShape} onValueChange={(value) => {
+                if (value === 'square') {
+                  onUpdate({ 
+                    shape: value as 'circle' | 'square',
+                    width: point.width || point.radius * 2,
+                    height: point.height || point.radius * 2
+                  });
+                } else {
+                  onUpdate({ shape: value as 'circle' | 'square' });
+                }
+              }}>
                 <SelectTrigger data-testid="select-image-shape">
                   <SelectValue />
                 </SelectTrigger>

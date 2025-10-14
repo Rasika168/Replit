@@ -35,6 +35,7 @@ export interface GradientStop {
 
 export interface GradientPoint {
   id: string;
+  name?: string;
   x: number;
   y: number;
   color: string;
@@ -116,6 +117,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
   const addPoint = useCallback((x: number, y: number) => {
     const newPoint: GradientPoint = {
       id: `point-${Date.now()}`,
+      name: `Point ${points.length + 1}`,
       x: x - pan.x,
       y: y - pan.y,
       color: '#3b82f6',
@@ -146,6 +148,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
       const newPoint = {
         ...point,
         id: `point-${Date.now()}`,
+        name: point.name ? `${point.name} Copy` : `Point ${points.length + 1} Copy`,
         x: point.x + 20,
         y: point.y + 20,
       };
@@ -935,7 +938,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
                           style={{ backgroundColor: point.color }}
                         />
                         <div>
-                          <div className="text-sm font-medium">Point {index + 1}</div>
+                          <div className="text-sm font-medium">{point.name || `Point ${index + 1}`}</div>
                           <div className="text-xs text-muted-foreground font-mono">
                             {Math.round(point.x)}, {Math.round(point.y)}
                           </div>
@@ -975,7 +978,23 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
 
             {selectedPointData && (
               <>
-                <div className="pt-4 border-t border-border">
+                <div className="pt-4 border-t border-border space-y-4">
+                  <div>
+                    <Label htmlFor="point-name" className="text-xs uppercase tracking-wide mb-2 block">Point Name</Label>
+                    <Input
+                      id="point-name"
+                      type="text"
+                      value={selectedPointData.name || ''}
+                      onChange={(e) => {
+                        updatePoint(selectedPointData.id, { name: e.target.value });
+                        saveToHistory(points.map(p => p.id === selectedPointData.id ? { ...p, name: e.target.value } : p));
+                      }}
+                      placeholder={`Point ${points.findIndex(p => p.id === selectedPointData.id) + 1}`}
+                      className="h-9"
+                      data-testid="input-point-name"
+                    />
+                  </div>
+                  
                   <ColorPicker
                     point={selectedPointData}
                     onUpdate={(updates) => {
