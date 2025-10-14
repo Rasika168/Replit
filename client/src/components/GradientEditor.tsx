@@ -130,6 +130,45 @@ export default function GradientEditor({
       : `radial-gradient(circle, ${colorStops})`;
   }, [sortedStops, gradientType]);
 
+  const interpolateColor = useCallback((position: number): { color: string; alpha: number } => {
+    if (sortedStops.length === 0) return { color: '#3b82f6', alpha: 100 };
+    if (sortedStops.length === 1) return { color: sortedStops[0].color, alpha: sortedStops[0].alpha || 100 };
+
+    let beforeStop = sortedStops[0];
+    let afterStop = sortedStops[sortedStops.length - 1];
+
+    for (let i = 0; i < sortedStops.length - 1; i++) {
+      if (position >= sortedStops[i].position && position <= sortedStops[i + 1].position) {
+        beforeStop = sortedStops[i];
+        afterStop = sortedStops[i + 1];
+        break;
+      }
+    }
+
+    if (position <= sortedStops[0].position) {
+      return { color: sortedStops[0].color, alpha: sortedStops[0].alpha || 100 };
+    }
+    if (position >= sortedStops[sortedStops.length - 1].position) {
+      return { color: sortedStops[sortedStops.length - 1].color, alpha: sortedStops[sortedStops.length - 1].alpha || 100 };
+    }
+
+    const range = afterStop.position - beforeStop.position;
+    const relativePosition = (position - beforeStop.position) / range;
+
+    const beforeRgb = hexToRgb(beforeStop.color);
+    const afterRgb = hexToRgb(afterStop.color);
+
+    const r = Math.round(beforeRgb.r + (afterRgb.r - beforeRgb.r) * relativePosition);
+    const g = Math.round(beforeRgb.g + (afterRgb.g - beforeRgb.g) * relativePosition);
+    const b = Math.round(beforeRgb.b + (afterRgb.b - beforeRgb.b) * relativePosition);
+
+    const beforeAlpha = beforeStop.alpha !== undefined ? beforeStop.alpha : 100;
+    const afterAlpha = afterStop.alpha !== undefined ? afterStop.alpha : 100;
+    const alpha = Math.round(beforeAlpha + (afterAlpha - beforeAlpha) * relativePosition);
+
+    return { color: rgbToHex(r, g, b), alpha };
+  }, [sortedStops]);
+
   const handleSliderClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (draggingStopId) return;
     
@@ -139,11 +178,13 @@ export default function GradientEditor({
     const x = e.clientX - rect.left;
     const position = Math.max(0, Math.min(100, (x / rect.width) * 100));
 
+    const sampledColor = interpolateColor(position);
+
     const newStop: GradientStop = {
       id: `stop-${Date.now()}`,
-      color: '#3b82f6',
+      color: sampledColor.color,
       position: Math.round(position),
-      alpha: 100
+      alpha: sampledColor.alpha
     };
 
     onChange([...stops, newStop]);
