@@ -335,7 +335,14 @@ export default function ColorPicker({ point, onUpdate, onClose, hideClose }: Col
             </div>
             <Slider
               value={[point.radius]}
-              onValueChange={([v]) => onUpdate({ radius: v })}
+              onValueChange={([v]) => {
+                // For square image shapes, also update width and height
+                if (point.image && point.shape === 'square') {
+                  onUpdate({ radius: v, width: v * 2, height: v * 2 });
+                } else {
+                  onUpdate({ radius: v });
+                }
+              }}
               min={20}
               max={400}
               step={5}

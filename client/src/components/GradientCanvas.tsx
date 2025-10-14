@@ -679,7 +679,18 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
         const screenX = point.x + pan.x;
         const screenY = point.y + pan.y;
         const newRadius = Math.sqrt((pos.x - screenX) ** 2 + (pos.y - screenY) ** 2);
-        updatePoint(draggingRadius, { radius: Math.max(20, newRadius) });
+        const clampedRadius = Math.max(20, newRadius);
+        
+        // For square image shapes, also update width and height
+        if (point.image && point.shape === 'square') {
+          updatePoint(draggingRadius, { 
+            radius: clampedRadius, 
+            width: clampedRadius * 2, 
+            height: clampedRadius * 2 
+          });
+        } else {
+          updatePoint(draggingRadius, { radius: clampedRadius });
+        }
       }
     } else if (draggingFocus) {
       const point = points.find(p => p.id === draggingFocus);
