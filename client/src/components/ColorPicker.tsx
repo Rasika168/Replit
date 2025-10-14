@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GradientPoint } from './GradientCanvas';
+import { GradientPoint, GradientStop } from './GradientCanvas';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import GradientStopSlider from './GradientStopSlider';
 
 interface ColorPickerProps {
   point: GradientPoint;
@@ -82,22 +83,24 @@ export default function ColorPicker({ point, onUpdate, onClose, hideClose }: Col
       )}
 
       <div className="space-y-3">
-        <div>
-          <Label className="text-xs uppercase tracking-wide mb-2 block">Gradient Type</Label>
-          <Select 
-            value={point.gradientType} 
-            onValueChange={(value) => onUpdate({ gradientType: value as 'solid' | 'linear' | 'radial' })}
-          >
-            <SelectTrigger data-testid="select-gradient-type">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="solid">Solid Color</SelectItem>
-              <SelectItem value="linear">Linear Gradient</SelectItem>
-              <SelectItem value="radial">Radial Gradient</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {point.gradientType === 'solid' && (
+          <div>
+            <Label className="text-xs uppercase tracking-wide mb-2 block">Gradient Type</Label>
+            <Select 
+              value={point.gradientType} 
+              onValueChange={(value) => onUpdate({ gradientType: value as 'solid' | 'linear' | 'radial' })}
+            >
+              <SelectTrigger data-testid="select-gradient-type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="solid">Solid Color</SelectItem>
+                <SelectItem value="linear">Linear Gradient</SelectItem>
+                <SelectItem value="radial">Radial Gradient</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div>
           <Label className="text-xs uppercase tracking-wide mb-2 block">
@@ -117,10 +120,12 @@ export default function ColorPicker({ point, onUpdate, onClose, hideClose }: Col
                   if (point.gradientType === 'solid') {
                     onUpdate({ color });
                   } else {
-                    // For gradients, update first color in gradient array
-                    const newColors = [...(point.gradientColors || [color, '#8b5cf6'])];
-                    newColors[0] = color;
-                    onUpdate({ color, gradientColors: newColors });
+                    const stops = point.gradientStops || [];
+                    if (stops.length > 0) {
+                      const newStops = [...stops];
+                      newStops[0] = { ...newStops[0], color };
+                      onUpdate({ color, gradientStops: newStops });
+                    }
                   }
                 }}
                 data-testid={`preset-color-${color}`}
@@ -129,53 +134,19 @@ export default function ColorPicker({ point, onUpdate, onClose, hideClose }: Col
           </div>
           
           {point.gradientType !== 'solid' && (
-            <div className="space-y-2 mt-3">
-              <Label className="text-xs">Gradient Colors</Label>
-              {(point.gradientColors || [point.color, '#8b5cf6']).map((color, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <div 
-                    className="w-8 h-8 rounded border-2 border-border"
-                    style={{ backgroundColor: color }}
-                  />
-                  <Input
-                    value={color}
-                    onChange={(e) => {
-                      const newColors = [...(point.gradientColors || [point.color, '#8b5cf6'])];
-                      newColors[index] = e.target.value;
-                      if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
-                        onUpdate({ gradientColors: newColors });
-                      }
-                    }}
-                    className="flex-1 font-mono"
-                  />
-                  {index > 1 && (
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => {
-                        const newColors = (point.gradientColors || []).filter((_, i) => i !== index);
-                        onUpdate({ gradientColors: newColors });
-                      }}
-                      className="h-8 w-8"
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-              {(point.gradientColors || []).length < 5 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                  onClick={() => {
-                    const newColors = [...(point.gradientColors || [point.color, '#8b5cf6']), '#ec4899'];
-                    onUpdate({ gradientColors: newColors });
-                  }}
-                >
-                  Add Color
-                </Button>
-              )}
+            <div className="mt-4 pt-4 border-t border-border">
+              <GradientStopSlider
+                stops={point.gradientStops || [
+                  { id: 'stop-1', color: '#3b82f6', position: 0 },
+                  { id: 'stop-2', color: '#8b5cf6', position: 100 }
+                ]}
+                onChange={(stops) => {
+                  const colors = stops.map(s => s.color);
+                  onUpdate({ gradientStops: stops, gradientColors: colors });
+                }}
+                gradientType={point.gradientType as 'linear' | 'radial'}
+                onGradientTypeChange={(type) => onUpdate({ gradientType: type })}
+              />
             </div>
           )}
         </div>
