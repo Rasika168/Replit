@@ -691,8 +691,8 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
   const selectedPointData = points.find(p => p.id === selectedPoint);
 
   return (
-    <div className="flex h-screen w-full bg-background">
-      <div className="flex flex-col flex-1 sticky top-0 h-screen">
+    <div className="flex h-screen w-full bg-background overflow-hidden">
+      <div className="flex flex-col flex-1 h-screen">
         <header className="flex items-center justify-between h-12 px-4 border-b border-border bg-card">
           <h1 className="text-sm font-semibold">Gradient Canvas</h1>
 
@@ -837,7 +837,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
         </div>
       </div>
 
-      <div className="w-80 border-l border-border bg-card flex flex-col overflow-y-auto">
+      <div className="w-80 border-l border-border bg-card flex flex-col h-screen overflow-y-auto">
         <Tabs defaultValue="points" className="flex-1 flex flex-col">
           <TabsList className="grid w-full grid-cols-3 rounded-none border-b border-border bg-transparent h-12 sticky top-0 bg-card z-10">
             <TabsTrigger value="points" data-testid="tab-points">Points</TabsTrigger>
