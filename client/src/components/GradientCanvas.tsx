@@ -76,6 +76,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
   const [history, setHistory] = useState<GradientPoint[][]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [cursorStyle, setCursorStyle] = useState('crosshair');
+  const [loadedImages, setLoadedImages] = useState<Map<string, HTMLImageElement>>(new Map());
 
   const [topLabel, setTopLabel] = useState('Sustainability');
   const [rightLabel, setRightLabel] = useState('Price');
@@ -340,6 +341,64 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
       ctx.globalCompositeOperation = 'source-over';
     });
 
+    // Render image circles with gradient borders
+    points.forEach(point => {
+      if (point.image && loadedImages.has(point.image)) {
+        const screenX = point.x + pan.x;
+        const screenY = point.y + pan.y;
+        const img = loadedImages.get(point.image)!;
+        const borderThickness = point.borderThickness || 8;
+        const radius = point.radius;
+
+        ctx.save();
+
+        // Create gradient border using gradient stops
+        const stops = point.gradientStops || [
+          { id: 'stop-1', color: '#3b82f6', position: 0 },
+          { id: 'stop-2', color: '#8b5cf6', position: 100 }
+        ];
+        const sortedStops = [...stops].sort((a, b) => a.position - b.position);
+
+        // Create conic gradient for border
+        const gradient = ctx.createConicGradient(0, screenX, screenY);
+        sortedStops.forEach(stop => {
+          gradient.addColorStop(stop.position / 100, stop.color);
+        });
+
+        // Apply blur if specified
+        if (point.borderBlur && point.borderBlur > 0) {
+          ctx.filter = `blur(${point.borderBlur}px)`;
+        }
+
+        // Draw gradient border circle
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, radius, 0, Math.PI * 2);
+        ctx.lineWidth = borderThickness * 2;
+        ctx.strokeStyle = gradient;
+        ctx.stroke();
+
+        // Reset filter
+        ctx.filter = 'none';
+
+        // Clip to inner circle for image
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, radius - borderThickness, 0, Math.PI * 2);
+        ctx.clip();
+
+        // Draw image inside circle
+        const imgSize = (radius - borderThickness) * 2;
+        ctx.drawImage(
+          img,
+          screenX - imgSize / 2,
+          screenY - imgSize / 2,
+          imgSize,
+          imgSize
+        );
+
+        ctx.restore();
+      }
+    });
+
     if (showOverlays) {
       points.forEach(point => {
         const screenX = point.x + pan.x;
@@ -399,7 +458,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
         }
       });
     }
-  }, [points, selectedPoint, pan, showGrid, gridSize, gridOpacity, showOverlays, backgroundColor]);
+  }, [points, selectedPoint, pan, showGrid, gridSize, gridOpacity, showOverlays, backgroundColor, loadedImages]);
 
   const renderLabels = useCallback(() => {
     const canvas = textCanvasRef.current;
@@ -442,6 +501,23 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
     ctx.fillText(leftLabel, 0, 0);
     ctx.restore();
   }, [topLabel, rightLabel, bottomLabel, leftLabel, fontFamily, fontSize, fontColor]);
+
+  useEffect(() => {
+    const newLoadedImages = new Map<string, HTMLImageElement>();
+    
+    points.forEach(point => {
+      if (point.image && !loadedImages.has(point.image)) {
+        const img = new Image();
+        img.src = point.image;
+        img.onload = () => {
+          newLoadedImages.set(point.image!, img);
+          setLoadedImages(prev => new Map(prev).set(point.image!, img));
+        };
+      } else if (point.image && loadedImages.has(point.image)) {
+        newLoadedImages.set(point.image, loadedImages.get(point.image)!);
+      }
+    });
+  }, [points]);
 
   useEffect(() => {
     renderGradient();
