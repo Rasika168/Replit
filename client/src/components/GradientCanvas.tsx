@@ -26,6 +26,12 @@ import {
 } from '@/components/ui/select';
 import ColorPicker from './ColorPicker';
 
+export interface GradientStop {
+  id: string;
+  color: string;
+  position: number;
+}
+
 export interface GradientPoint {
   id: string;
   x: number;
@@ -39,6 +45,10 @@ export interface GradientPoint {
   focusY: number;
   gradientType: 'solid' | 'linear' | 'radial';
   gradientColors: string[];
+  gradientStops?: GradientStop[];
+  image?: string;
+  borderThickness?: number;
+  borderBlur?: number;
 }
 
 interface GradientCanvasProps {
@@ -111,6 +121,12 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
       focusY: 0,
       gradientType: 'solid',
       gradientColors: ['#3b82f6', '#8b5cf6'],
+      gradientStops: [
+        { id: 'stop-1', color: '#3b82f6', position: 0 },
+        { id: 'stop-2', color: '#8b5cf6', position: 100 }
+      ],
+      borderThickness: 8,
+      borderBlur: 0,
     };
     const newPoints = [...points, newPoint];
     setPoints(newPoints);
