@@ -21,6 +21,10 @@ An interactive freeform gradient canvas tool for creating custom mesh gradients 
 - **Zoom Behavior Enhancement**: Fixed canvas container layout so background color properly extends beyond the canvas when zooming out below 100%, providing a consistent viewport experience
 - **Grid Display Improvement**: Migrated grid rendering from canvas to CSS background pattern with transparent canvas overlay, ensuring the grid is visible everywhere (inside canvas quadrants and extending into background) while following pan/zoom transformations
 - **UX Improvements**: Better cursor feedback when hovering over draggable elements (points and focus handles)
+- **Solid Gradient Fix**: Fixed solid gradient type to render as pure solid color without blur (previously was using radial gradient with fade)
+- **Rectangle Gradient Fix**: Fixed rectangle shape to use proper gradient dimensions (3:2 aspect ratio) instead of circular gradient dimensions
+- **Gradient Type Layout**: Changed gradient type checkboxes from vertical to horizontal layout for better UI organization
+- **Gradient Type Persistence**: Fixed issue where changing colors would incorrectly switch gradient type from linear to radial
 
 ## User Preferences
 
