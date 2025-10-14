@@ -41,14 +41,15 @@ export interface GradientPoint {
   color: string;
   opacity: number;
   radius: number;
-  edgeType: 'soft' | 'hard';
-  shape: 'blob' | 'circle' | 'square';
+  edgeType?: 'soft' | 'hard';
+  shape: 'blob' | 'circle' | 'square' | 'rectangle';
   focusX: number;
   focusY: number;
   gradientType: 'solid' | 'linear' | 'radial';
   gradientColors: string[];
   gradientStops?: GradientStop[];
   image?: string;
+  imageScale?: number;
   borderThickness?: number;
   borderBlur?: number;
   width?: number;
