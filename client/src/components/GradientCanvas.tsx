@@ -813,38 +813,43 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
           </div>
         </header>
 
-        <div className="relative flex-1 overflow-hidden">
+        <div 
+          className="relative flex-1 overflow-hidden"
+          style={{ backgroundColor }}
+        >
           <ContextMenu>
             <ContextMenuTrigger asChild>
-              <div className="relative w-full h-full">
-                <canvas
-                  ref={canvasRef}
-                  width={1200}
-                  height={800}
-                  className="absolute inset-0 w-full h-full"
-                  style={{ 
-                    cursor: cursorStyle,
-                    transform: `scale(${zoom})`,
-                    transformOrigin: 'center center'
-                  }}
-                  onClick={handleCanvasClick}
-                  onMouseDown={handleMouseDown}
-                  onMouseMove={handleCanvasMouseMove}
-                  onMouseUp={handleMouseUp}
-                  onMouseLeave={handleMouseUp}
-                  data-testid="canvas-gradient"
-                />
-                <canvas
-                  ref={textCanvasRef}
-                  width={1200}
-                  height={800}
-                  className="absolute inset-0 w-full h-full pointer-events-none"
-                  style={{ 
-                    transform: `scale(${zoom})`,
-                    transformOrigin: 'center center'
-                  }}
-                  data-testid="canvas-labels"
-                />
+              <div className="relative w-full h-full flex items-center justify-center">
+                <div className="relative">
+                  <canvas
+                    ref={canvasRef}
+                    width={1200}
+                    height={800}
+                    className="block"
+                    style={{ 
+                      cursor: cursorStyle,
+                      transform: `scale(${zoom})`,
+                      transformOrigin: 'center center'
+                    }}
+                    onClick={handleCanvasClick}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleCanvasMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                    data-testid="canvas-gradient"
+                  />
+                  <canvas
+                    ref={textCanvasRef}
+                    width={1200}
+                    height={800}
+                    className="absolute top-0 left-0 pointer-events-none"
+                    style={{ 
+                      transform: `scale(${zoom})`,
+                      transformOrigin: 'center center'
+                    }}
+                    data-testid="canvas-labels"
+                  />
+                </div>
               </div>
             </ContextMenuTrigger>
             <ContextMenuContent>
