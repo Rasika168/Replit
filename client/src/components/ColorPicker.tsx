@@ -82,7 +82,13 @@ export default function ColorPicker({ point, onUpdate, onClose, hideClose }: Col
         </div>
       )}
 
-      <div className="space-y-3">
+      <Tabs defaultValue="colors" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="colors" data-testid="tab-colors">Colors</TabsTrigger>
+          <TabsTrigger value="image" data-testid="tab-image">Image Circle</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="colors" className="space-y-3 mt-4">
         {point.gradientType === 'solid' && (
           <div>
             <Label className="text-xs uppercase tracking-wide mb-2 block">Gradient Type</Label>
@@ -267,7 +273,9 @@ export default function ColorPicker({ point, onUpdate, onClose, hideClose }: Col
             </div>
           </TabsContent>
         </Tabs>
+        </TabsContent>
 
+        <TabsContent value="image" className="space-y-3 mt-4">
         <div>
           <Label className="text-xs uppercase tracking-wide mb-2 block">Shape</Label>
           <Select value={point.shape} onValueChange={(value) => onUpdate({ shape: value as 'blob' | 'circle' | 'square' })}>
@@ -388,7 +396,8 @@ export default function ColorPicker({ point, onUpdate, onClose, hideClose }: Col
             Reset Focus
           </Button>
         </div>
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

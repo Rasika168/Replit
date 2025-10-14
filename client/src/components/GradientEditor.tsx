@@ -125,10 +125,9 @@ export default function GradientEditor({
       const color = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
       return `${color} ${stop.position}%`;
     }).join(', ');
-    return gradientType === 'linear'
-      ? `linear-gradient(to right, ${colorStops})`
-      : `radial-gradient(circle, ${colorStops})`;
-  }, [sortedStops, gradientType]);
+    // Always use linear gradient for the slider, regardless of gradient type
+    return `linear-gradient(to right, ${colorStops})`;
+  }, [sortedStops]);
 
   const interpolateColor = useCallback((position: number): { color: string; alpha: number } => {
     if (sortedStops.length === 0) return { color: '#3b82f6', alpha: 100 };
