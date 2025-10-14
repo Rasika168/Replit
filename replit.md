@@ -4,6 +4,13 @@
 
 An interactive freeform gradient canvas tool for creating custom mesh gradients with draggable color points. The application allows users to place unlimited color nodes on a canvas, adjust their properties (color, opacity, radius, edge type, shape), and export the resulting gradients. Built as a professional design tool with precision controls and real-time visual feedback.
 
+## Recent Changes
+
+### October 14, 2025
+- **Enhanced Drag-and-Drop Interaction**: Improved hover detection for gradient points (14px radius) and pink focus handles (12px radius) for easier grab-and-drag functionality
+- **Zoom Behavior Enhancement**: Fixed canvas container layout so background color properly extends beyond the canvas when zooming out below 100%, providing a consistent viewport experience
+- **UX Improvements**: Better cursor feedback when hovering over draggable elements (points and focus handles)
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
