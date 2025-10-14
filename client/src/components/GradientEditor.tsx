@@ -10,6 +10,7 @@ export interface GradientStop {
   id: string;
   color: string;
   position: number;
+  alpha?: number;
 }
 
 interface GradientEditorProps {
@@ -118,7 +119,12 @@ export default function GradientEditor({
   const selectedStop = stops.find(s => s.id === selectedStopId);
 
   const getGradientCSS = useCallback(() => {
-    const colorStops = sortedStops.map(stop => `${stop.color} ${stop.position}%`).join(', ');
+    const colorStops = sortedStops.map(stop => {
+      const alpha = stop.alpha !== undefined ? stop.alpha / 100 : 1;
+      const rgb = hexToRgb(stop.color);
+      const color = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
+      return `${color} ${stop.position}%`;
+    }).join(', ');
     return gradientType === 'linear'
       ? `linear-gradient(to right, ${colorStops})`
       : `radial-gradient(circle, ${colorStops})`;
@@ -136,7 +142,8 @@ export default function GradientEditor({
     const newStop: GradientStop = {
       id: `stop-${Date.now()}`,
       color: '#3b82f6',
-      position: Math.round(position)
+      position: Math.round(position),
+      alpha: 100
     };
 
     onChange([...stops, newStop]);
@@ -411,11 +418,16 @@ export default function GradientEditor({
               <Label className="text-xs text-muted-foreground mb-1 block">A</Label>
               <Input
                 type="number"
-                value={100}
+                value={selectedStop.alpha !== undefined ? selectedStop.alpha : 100}
+                onChange={(e) => {
+                  const alpha = Math.max(0, Math.min(100, parseInt(e.target.value) || 0));
+                  onChange(stops.map(stop => 
+                    stop.id === selectedStopId ? { ...stop, alpha } : stop
+                  ));
+                }}
                 className="text-center"
                 min="0"
                 max="100"
-                disabled
                 data-testid="input-alpha"
               />
             </div>
@@ -444,6 +456,48 @@ export default function GradientEditor({
               />
             </div>
           </div>
+
+          {/* Alpha/Opacity Slider */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <Label className="text-xs uppercase tracking-wide">Alpha / Opacity</Label>
+              <span className="text-xs text-muted-foreground font-mono">
+                {selectedStop.alpha !== undefined ? selectedStop.alpha : 100}%
+              </span>
+            </div>
+            <div className="relative">
+              <Slider
+                value={[selectedStop.alpha !== undefined ? selectedStop.alpha : 100]}
+                onValueChange={([alpha]) => {
+                  onChange(stops.map(stop => 
+                    stop.id === selectedStopId ? { ...stop, alpha } : stop
+                  ));
+                }}
+                max={100}
+                step={1}
+                className="mb-2"
+                data-testid="slider-alpha"
+              />
+              <div 
+                className="h-3 rounded-full w-full"
+                style={{
+                  background: `linear-gradient(to right, 
+                    rgba(${currentRgb.r}, ${currentRgb.g}, ${currentRgb.b}, 0), 
+                    rgba(${currentRgb.r}, ${currentRgb.g}, ${currentRgb.b}, 1))`,
+                  backgroundImage: `
+                    linear-gradient(to right, 
+                      rgba(${currentRgb.r}, ${currentRgb.g}, ${currentRgb.b}, 0), 
+                      rgba(${currentRgb.r}, ${currentRgb.g}, ${currentRgb.b}, 1)),
+                    linear-gradient(45deg, #ccc 25%, transparent 25%), 
+                    linear-gradient(-45deg, #ccc 25%, transparent 25%), 
+                    linear-gradient(45deg, transparent 75%, #ccc 75%), 
+                    linear-gradient(-45deg, transparent 75%, #ccc 75%)`,
+                  backgroundSize: '100% 100%, 8px 8px, 8px 8px, 8px 8px, 8px 8px',
+                  backgroundPosition: '0 0, 0 0, 4px 0, 4px -4px, 0 4px'
+                }}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Stops List Panel */}
@@ -457,7 +511,8 @@ export default function GradientEditor({
                 const newStop: GradientStop = {
                   id: `stop-${Date.now()}`,
                   color: '#ec4899',
-                  position: 50
+                  position: 50,
+                  alpha: 100
                 };
                 onChange([...stops, newStop]);
                 setSelectedStopId(newStop.id);

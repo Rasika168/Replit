@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import GradientStopSlider from './GradientStopSlider';
+import GradientEditor from './GradientEditor';
 
 interface ColorPickerProps {
   point: GradientPoint;
@@ -135,7 +135,7 @@ export default function ColorPicker({ point, onUpdate, onClose, hideClose }: Col
           
           {point.gradientType !== 'solid' && (
             <div className="mt-4 pt-4 border-t border-border">
-              <GradientStopSlider
+              <GradientEditor
                 stops={point.gradientStops || [
                   { id: 'stop-1', color: '#3b82f6', position: 0 },
                   { id: 'stop-2', color: '#8b5cf6', position: 100 }
