@@ -180,29 +180,40 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
   }, []);
 
   const getHoveredElement = useCallback((x: number, y: number) => {
+    // Check focus handles first (highest priority for selected point)
     for (const point of points) {
-      const screenX = point.x + pan.x;
-      const screenY = point.y + pan.y;
-      
-      const pointDistance = Math.sqrt((screenX - x) ** 2 + (screenY - y) ** 2);
-      if (pointDistance <= 8) {
-        return { type: 'point' as const, id: point.id };
-      }
-      
       if (point.id === selectedPoint) {
-        const radiusDistance = Math.sqrt((screenX + point.radius - x) ** 2 + (screenY - y) ** 2);
-        if (radiusDistance <= 6) {
-          return { type: 'radius' as const, id: point.id };
-        }
+        const screenX = point.x + pan.x;
+        const screenY = point.y + pan.y;
         
+        // Check pink focus handle (center gradient direction handle)
         const focusX = screenX + point.focusX;
         const focusY = screenY + point.focusY;
         const focusDistance = Math.sqrt((focusX - x) ** 2 + (focusY - y) ** 2);
         if (focusDistance <= 15) {
           return { type: 'focus' as const, id: point.id };
         }
+        
+        // Check radius handle
+        const radiusDistance = Math.sqrt((screenX + point.radius - x) ** 2 + (screenY - y) ** 2);
+        if (radiusDistance <= 8) {
+          return { type: 'radius' as const, id: point.id };
+        }
       }
     }
+    
+    // Check points (circumference detection)
+    for (const point of points) {
+      const screenX = point.x + pan.x;
+      const screenY = point.y + pan.y;
+      
+      // Increased detection radius to include the point's visual circumference (8px radius + 3px stroke)
+      const pointDistance = Math.sqrt((screenX - x) ** 2 + (screenY - y) ** 2);
+      if (pointDistance <= 12) {
+        return { type: 'point' as const, id: point.id };
+      }
+    }
+    
     return null;
   }, [points, selectedPoint, pan]);
 
