@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import ColorPicker from './ColorPicker';
+import ImageCircle from './ImageCircle';
 
 export interface GradientStop {
   id: string;
@@ -803,16 +804,28 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
             </div>
 
             {selectedPointData && (
-              <div className="pt-4 border-t border-border">
-                <ColorPicker
-                  point={selectedPointData}
-                  onUpdate={(updates) => {
-                    updatePoint(selectedPointData.id, updates);
-                    saveToHistory(points.map(p => p.id === selectedPointData.id ? { ...p, ...updates } : p));
-                  }}
-                  hideClose={true}
-                />
-              </div>
+              <>
+                <div className="pt-4 border-t border-border">
+                  <ColorPicker
+                    point={selectedPointData}
+                    onUpdate={(updates) => {
+                      updatePoint(selectedPointData.id, updates);
+                      saveToHistory(points.map(p => p.id === selectedPointData.id ? { ...p, ...updates } : p));
+                    }}
+                    hideClose={true}
+                  />
+                </div>
+
+                <div className="pt-4 border-t border-border">
+                  <ImageCircle
+                    point={selectedPointData}
+                    onUpdate={(updates) => {
+                      updatePoint(selectedPointData.id, updates);
+                      saveToHistory(points.map(p => p.id === selectedPointData.id ? { ...p, ...updates } : p));
+                    }}
+                  />
+                </div>
+              </>
             )}
           </TabsContent>
 
