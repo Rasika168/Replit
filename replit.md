@@ -10,9 +10,13 @@ An interactive freeform gradient canvas tool for creating custom mesh gradients 
 - **ColorPicker UI Restructure**: Removed separate "Image Circle" tab and consolidated all features into single Colors view
 - **Image Upload in Colors Tab**: Added image upload functionality with preview directly in the Colors tab
 - **Image Scale Control**: Added image scaling slider (0.1x - 3x) for uploaded images
-- **Gradient Type Checkboxes**: Changed gradient type selection from dropdown to checkboxes (Solid, Linear, Radial) that are always visible regardless of current gradient style
+- **Gradient Type Checkboxes**: Changed gradient type selection from dropdown to checkboxes (Solid, Linear, Radial) with simplified labels
+- **Gradient Type Always Visible**: Gradient type checkboxes are now always visible regardless of current gradient style
+- **Duplicate Gradient Type Removed**: Removed duplicate gradient type selector from gradient editor panel
 - **Edge Type Removal**: Completely removed the edge type section (soft/hard edge controls) from the interface
-- **Rectangle Shape Added**: Added "rectangle" as a new shape option alongside blob, circle, and square
+- **Rectangle Shape Added**: Added "rectangle" as a new shape option (3:2 aspect ratio) alongside blob, circle, and square with proper canvas rendering
+- **Keyboard Shortcuts**: Added undo (Ctrl/Cmd+Z) and redo (Ctrl/Cmd+Shift+Z) keyboard shortcuts
+- **Universal Image Upload**: Image upload now works with any selected shape without shape-specific restrictions
 - **Enhanced Drag-and-Drop Interaction**: Improved hover detection for gradient points (14px radius) and pink focus handles (12px radius) for easier grab-and-drag functionality
 - **Zoom Behavior Enhancement**: Fixed canvas container layout so background color properly extends beyond the canvas when zooming out below 100%, providing a consistent viewport experience
 - **Grid Display Improvement**: Migrated grid rendering from canvas to CSS background pattern with transparent canvas overlay, ensuring the grid is visible everywhere (inside canvas quadrants and extending into background) while following pan/zoom transformations
