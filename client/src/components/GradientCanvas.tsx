@@ -682,7 +682,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
 
   return (
     <div className="flex h-screen w-full bg-background">
-      <div className="flex flex-col flex-1">
+      <div className="flex flex-col flex-1 sticky top-0 h-screen">
         <header className="flex items-center justify-between h-12 px-4 border-b border-border bg-card">
           <h1 className="text-sm font-semibold">Gradient Canvas</h1>
 
@@ -827,15 +827,15 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
         </div>
       </div>
 
-      <div className="w-80 border-l border-border bg-card flex flex-col">
+      <div className="w-80 border-l border-border bg-card flex flex-col overflow-y-auto">
         <Tabs defaultValue="points" className="flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-3 rounded-none border-b border-border bg-transparent h-12">
+          <TabsList className="grid w-full grid-cols-3 rounded-none border-b border-border bg-transparent h-12 sticky top-0 bg-card z-10">
             <TabsTrigger value="points" data-testid="tab-points">Points</TabsTrigger>
             <TabsTrigger value="canvas" data-testid="tab-canvas">Canvas</TabsTrigger>
             <TabsTrigger value="labels" data-testid="tab-labels">Labels</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="points" className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
+          <TabsContent value="points" className="p-4 space-y-4 mt-0">
             <div>
               <h3 className="text-xs font-semibold uppercase tracking-wide mb-3">Gradient Points</h3>
               {points.length === 0 ? (
@@ -912,7 +912,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
             )}
           </TabsContent>
 
-          <TabsContent value="canvas" className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
+          <TabsContent value="canvas" className="p-4 space-y-4 mt-0">
             <div>
               <h3 className="text-xs font-semibold uppercase tracking-wide mb-3">Canvas Settings</h3>
               
@@ -1013,7 +1013,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
             </div>
           </TabsContent>
 
-          <TabsContent value="labels" className="flex-1 overflow-y-auto p-4 space-y-4 mt-0">
+          <TabsContent value="labels" className="p-4 space-y-4 mt-0">
             <div>
               <h3 className="text-xs font-semibold uppercase tracking-wide mb-3">Quadrant Labels</h3>
               
