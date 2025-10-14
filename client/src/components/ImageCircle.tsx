@@ -58,21 +58,24 @@ export default function ImageCircle({ point, onUpdate }: ImageCircleProps) {
         <div className="relative flex items-center justify-center p-4 border-2 border-dashed border-border rounded-lg">
           {previewUrl ? (
             <div className="relative">
-              <div 
-                className="relative rounded-full overflow-hidden"
-                style={{
-                  width: '200px',
-                  height: '200px',
-                  padding: `${borderThickness}px`,
-                  background: getGradientCSS(),
-                  filter: borderBlur > 0 ? `blur(${borderBlur}px)` : 'none',
-                }}
-              >
+              <div className="relative" style={{ width: '200px', height: '200px' }}>
+                {/* Gradient border with blur */}
                 <div 
-                  className="w-full h-full rounded-full bg-cover bg-center"
+                  className="absolute inset-0 rounded-full"
+                  style={{
+                    background: getGradientCSS(),
+                    filter: borderBlur > 0 ? `blur(${borderBlur}px)` : 'none',
+                  }}
+                />
+                {/* Inner circle mask for image */}
+                <div 
+                  className="absolute rounded-full bg-cover bg-center"
                   style={{ 
                     backgroundImage: `url(${previewUrl})`,
-                    filter: borderBlur > 0 ? `blur(0px)` : 'none',
+                    top: `${borderThickness}px`,
+                    left: `${borderThickness}px`,
+                    right: `${borderThickness}px`,
+                    bottom: `${borderThickness}px`,
                   }}
                   data-testid="image-circle-preview"
                 />

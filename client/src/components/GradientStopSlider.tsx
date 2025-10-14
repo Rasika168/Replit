@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -96,7 +96,7 @@ export default function GradientStopSlider({
     ));
   };
 
-  useState(() => {
+  useEffect(() => {
     if (draggingStopId) {
       window.addEventListener('mousemove', handleStopDrag);
       window.addEventListener('mouseup', handleStopDragEnd);
@@ -105,7 +105,7 @@ export default function GradientStopSlider({
         window.removeEventListener('mouseup', handleStopDragEnd);
       };
     }
-  });
+  }, [draggingStopId, handleStopDrag, handleStopDragEnd]);
 
   return (
     <div className="space-y-4">
