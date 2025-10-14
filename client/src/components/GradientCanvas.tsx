@@ -723,12 +723,26 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
   };
 
   const handleExport = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const gradientCanvas = canvasRef.current;
+    const labelCanvas = textCanvasRef.current;
+    if (!gradientCanvas || !labelCanvas) return;
+
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = 1200;
+    exportCanvas.height = 800;
+    const ctx = exportCanvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.fillStyle = backgroundColor;
+    ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+    ctx.drawImage(gradientCanvas, 0, 0);
+
+    ctx.drawImage(labelCanvas, 0, 0);
 
     const link = document.createElement('a');
     link.download = 'gradient.png';
-    link.href = canvas.toDataURL();
+    link.href = exportCanvas.toDataURL();
     link.click();
   };
 
