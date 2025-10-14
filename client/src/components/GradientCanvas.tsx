@@ -71,6 +71,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
   const [showGrid, setShowGrid] = useState(true);
   const [gridSize, setGridSize] = useState(20);
   const [gridOpacity, setGridOpacity] = useState(0.5);
+  const [gridColor, setGridColor] = useState('#404040');
   const [showOverlays, setShowOverlays] = useState(true);
   const [backgroundColor, setBackgroundColor] = useState('#333333');
   const [history, setHistory] = useState<GradientPoint[][]>([]);
@@ -218,7 +219,10 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
     ctx.fillRect(0, 0, width, height);
 
     if (showGrid) {
-      ctx.strokeStyle = `rgba(64, 64, 64, ${gridOpacity})`;
+      const rgb = hexToRgb(gridColor);
+      ctx.strokeStyle = rgb 
+        ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${gridOpacity})`
+        : `rgba(64, 64, 64, ${gridOpacity})`;
       ctx.lineWidth = 1;
       
       const gridSpacing = gridSize;
@@ -474,7 +478,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
         }
       });
     }
-  }, [points, selectedPoint, pan, showGrid, gridSize, gridOpacity, showOverlays, backgroundColor, loadedImages]);
+  }, [points, selectedPoint, pan, showGrid, gridSize, gridOpacity, gridColor, showOverlays, backgroundColor, loadedImages]);
 
   const renderLabels = useCallback(() => {
     const canvas = textCanvasRef.current;
@@ -987,6 +991,18 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
                         max={100}
                         step={5}
                         data-testid="slider-grid-opacity"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="grid-color" className="text-xs uppercase tracking-wide">Grid Color</Label>
+                      <Input
+                        id="grid-color"
+                        type="color"
+                        value={gridColor}
+                        onChange={(e) => setGridColor(e.target.value)}
+                        className="h-10 mt-1"
+                        data-testid="input-grid-color"
                       />
                     </div>
                   </>
