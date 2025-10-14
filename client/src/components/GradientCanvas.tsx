@@ -801,8 +801,8 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
                 linear-gradient(90deg, ${gridColorWithOpacity} 1px, transparent 1px)
               `;
             })() : 'none',
-            backgroundSize: showGrid ? `${gridSize}px ${gridSize}px` : undefined,
-            backgroundPosition: showGrid ? `${pan.x % gridSize}px ${pan.y % gridSize}px` : undefined
+            backgroundSize: showGrid ? `${gridSize * zoom}px ${gridSize * zoom}px` : undefined,
+            backgroundPosition: showGrid ? `calc(50% + ${pan.x * zoom}px) calc(50% + ${pan.y * zoom}px)` : undefined
           }}
         >
           <ContextMenu>
