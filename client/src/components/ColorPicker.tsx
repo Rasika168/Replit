@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { GradientPoint, GradientStop } from './GradientCanvas';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -27,6 +27,12 @@ export default function ColorPicker({ point, onUpdate, onClose, hideClose }: Col
   const [hexInput, setHexInput] = useState(point.color);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(point.image || null);
+
+  // Sync previewUrl when point changes (for switching between points)
+  useEffect(() => {
+    setPreviewUrl(point.image || null);
+    setHexInput(point.color);
+  }, [point.id, point.image, point.color]);
 
   const handleHexChange = (value: string) => {
     setHexInput(value);
@@ -198,7 +204,8 @@ export default function ColorPicker({ point, onUpdate, onClose, hideClose }: Col
                   onUpdate({ 
                     gradientStops: stops, 
                     gradientColors: colors,
-                    color: firstColor
+                    color: firstColor,
+                    gradientType: point.gradientType // Explicitly preserve gradient type
                   });
                 }}
                 gradientType={point.gradientType as 'linear' | 'radial'}

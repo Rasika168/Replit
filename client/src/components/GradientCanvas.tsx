@@ -70,6 +70,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
   const [draggingFocus, setDraggingFocus] = useState<string | null>(null);
   const [isPanning, setIsPanning] = useState(false);
   const [panJustEnded, setPanJustEnded] = useState(false);
+  const [dragJustEnded, setDragJustEnded] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -368,66 +369,38 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
       ctx.globalCompositeOperation = 'source-over';
     });
 
-    // Render image shapes with gradient borders
+    // Render images without borders (simple clipped image with opacity)
     points.forEach(point => {
       if (point.image && loadedImages.has(point.image)) {
         const screenX = point.x + pan.x;
         const screenY = point.y + pan.y;
         const img = loadedImages.get(point.image)!;
-        const borderThickness = point.borderThickness || 8;
         const radius = point.radius;
         const imageShape = point.shape || 'circle';
-        const width = point.width || radius * 2;
-        const height = point.height || radius * 2;
+        
+        // Use point.width/height if available, otherwise calculate from radius
+        const width = point.width || (imageShape === 'rectangle' ? radius * 3 : radius * 2);
+        const height = point.height || (imageShape === 'rectangle' ? radius * 1.5 : radius * 2);
 
         ctx.save();
 
-        // Create gradient border using gradient stops
-        const stops = point.gradientStops || [
-          { id: 'stop-1', color: '#3b82f6', position: 0 },
-          { id: 'stop-2', color: '#8b5cf6', position: 100 }
-        ];
-        const sortedStops = [...stops].sort((a, b) => a.position - b.position);
+        // Apply opacity
+        ctx.globalAlpha = point.opacity;
 
-        // Create conic gradient for border
-        const gradient = ctx.createConicGradient(0, screenX, screenY);
-        sortedStops.forEach(stop => {
-          gradient.addColorStop(stop.position / 100, stop.color);
-        });
-
-        // Apply blur if specified
-        if (point.borderBlur && point.borderBlur > 0) {
-          ctx.filter = `blur(${point.borderBlur}px)`;
-        }
-
-        // Draw gradient border based on shape
+        // Clip to shape
         ctx.beginPath();
-        if (imageShape === 'circle') {
+        if (imageShape === 'circle' || imageShape === 'blob') {
           ctx.arc(screenX, screenY, radius, 0, Math.PI * 2);
         } else if (imageShape === 'square') {
           ctx.rect(screenX - width / 2, screenY - height / 2, width, height);
-        }
-        ctx.lineWidth = borderThickness * 2;
-        ctx.strokeStyle = gradient;
-        ctx.stroke();
-
-        // Reset filter
-        ctx.filter = 'none';
-
-        // Clip to inner shape for image
-        ctx.beginPath();
-        if (imageShape === 'circle') {
-          ctx.arc(screenX, screenY, radius - borderThickness, 0, Math.PI * 2);
-        } else if (imageShape === 'square') {
-          const innerWidth = width - borderThickness * 2;
-          const innerHeight = height - borderThickness * 2;
-          ctx.rect(screenX - innerWidth / 2, screenY - innerHeight / 2, innerWidth, innerHeight);
+        } else if (imageShape === 'rectangle') {
+          ctx.rect(screenX - width / 2, screenY - height / 2, width, height);
         }
         ctx.clip();
 
         // Draw image inside shape
-        if (imageShape === 'circle') {
-          const imgSize = (radius - borderThickness) * 2;
+        if (imageShape === 'circle' || imageShape === 'blob') {
+          const imgSize = radius * 2;
           ctx.drawImage(
             img,
             screenX - imgSize / 2,
@@ -436,14 +409,20 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
             imgSize
           );
         } else if (imageShape === 'square') {
-          const innerWidth = width - borderThickness * 2;
-          const innerHeight = height - borderThickness * 2;
           ctx.drawImage(
             img,
-            screenX - innerWidth / 2,
-            screenY - innerHeight / 2,
-            innerWidth,
-            innerHeight
+            screenX - width / 2,
+            screenY - height / 2,
+            width,
+            height
+          );
+        } else if (imageShape === 'rectangle') {
+          ctx.drawImage(
+            img,
+            screenX - width / 2,
+            screenY - height / 2,
+            width,
+            height
           );
         }
 
@@ -637,7 +616,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (isPanning || draggingPoint || draggingRadius || draggingFocus || e.shiftKey || panJustEnded) {
+    if (isPanning || draggingPoint || draggingRadius || draggingFocus || e.shiftKey || panJustEnded || dragJustEnded) {
       return;
     }
     
@@ -660,9 +639,12 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
     const pos = getCursorPosition(e);
     if (!pos) return;
 
-    // Clear panJustEnded flag on any mousedown
+    // Clear flags on any mousedown
     if (panJustEnded) {
       setPanJustEnded(false);
+    }
+    if (dragJustEnded) {
+      setDragJustEnded(false);
     }
 
     if (e.shiftKey) {
@@ -742,6 +724,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
   const handleMouseUp = () => {
     if (draggingPoint || draggingRadius || draggingFocus) {
       saveToHistory(points);
+      setDragJustEnded(true);
     }
     if (isPanning) {
       setPanJustEnded(true);
