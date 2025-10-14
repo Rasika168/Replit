@@ -831,7 +831,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
               {draggingFocus && '💗 Adjusting Focus'}
               {draggingRadius && '🔷 Adjusting Radius'}
               {isPanning && '✋ Panning Canvas'}
-              {!draggingPoint && !draggingFocus && !draggingRadius && !isPanning && 'Hold Shift to Pan • Click to Add Point'}
+              {!draggingPoint && !draggingFocus && !draggingRadius && !isPanning && 'Hold Shift to Pan • Click to Add Point • Drag Pink Focus Point to Adjust Gradient'}
             </p>
           </div>
         </div>
