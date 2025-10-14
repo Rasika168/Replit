@@ -65,6 +65,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
   const [draggingRadius, setDraggingRadius] = useState<string | null>(null);
   const [draggingFocus, setDraggingFocus] = useState<string | null>(null);
   const [isPanning, setIsPanning] = useState(false);
+  const [panJustEnded, setPanJustEnded] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -197,7 +198,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
         const focusX = screenX + point.focusX;
         const focusY = screenY + point.focusY;
         const focusDistance = Math.sqrt((focusX - x) ** 2 + (focusY - y) ** 2);
-        if (focusDistance <= 10) {
+        if (focusDistance <= 15) {
           return { type: 'focus' as const, id: point.id };
         }
       }
@@ -472,12 +473,12 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
           
           // Draw focus point with glow effect
           ctx.shadowColor = '#ec4899';
-          ctx.shadowBlur = draggingFocus === point.id ? 15 : 8;
+          ctx.shadowBlur = draggingFocus === point.id ? 20 : 10;
           ctx.fillStyle = '#ec4899';
           ctx.strokeStyle = '#ffffff';
           ctx.lineWidth = 3;
           ctx.beginPath();
-          ctx.arc(focusX, focusY, draggingFocus === point.id ? 9 : 8, 0, Math.PI * 2);
+          ctx.arc(focusX, focusY, draggingFocus === point.id ? 12 : 10, 0, Math.PI * 2);
           ctx.fill();
           ctx.stroke();
           ctx.shadowBlur = 0;
@@ -577,14 +578,16 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
     } else if (hovered?.type === 'radius') {
       setCursorStyle('nwse-resize');
     } else if (hovered?.type === 'focus') {
-      setCursorStyle('move');
+      setCursorStyle('grab');
     } else {
       setCursorStyle('crosshair');
     }
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (isPanning || draggingPoint || draggingRadius || draggingFocus) return;
+    if (isPanning || draggingPoint || draggingRadius || draggingFocus || e.shiftKey || panJustEnded) {
+      return;
+    }
     
     const pos = getCursorPosition(e);
     if (!pos) return;
@@ -604,6 +607,11 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const pos = getCursorPosition(e);
     if (!pos) return;
+
+    // Clear panJustEnded flag on any mousedown
+    if (panJustEnded) {
+      setPanJustEnded(false);
+    }
 
     if (e.shiftKey) {
       setIsPanning(true);
@@ -628,6 +636,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
 
     if (hovered?.type === 'focus') {
       setDraggingFocus(hovered.id);
+      setCursorStyle('grabbing');
       return;
     }
   };
@@ -671,6 +680,9 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
     if (draggingPoint || draggingRadius || draggingFocus) {
       saveToHistory(points);
     }
+    if (isPanning) {
+      setPanJustEnded(true);
+    }
     setDraggingPoint(null);
     setDraggingRadius(null);
     setDraggingFocus(null);
@@ -691,8 +703,8 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
   const selectedPointData = points.find(p => p.id === selectedPoint);
 
   return (
-    <div className="flex h-screen w-full bg-background">
-      <div className="flex flex-col flex-1 h-screen sticky top-0">
+    <div className="flex h-screen w-full bg-background overflow-hidden fixed inset-0">
+      <div className="flex flex-col flex-1 h-screen">
         <header className="flex items-center justify-between h-12 px-4 border-b border-border bg-card">
           <h1 className="text-sm font-semibold">Gradient Canvas</h1>
 
