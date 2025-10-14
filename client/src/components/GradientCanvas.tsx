@@ -50,6 +50,8 @@ export interface GradientPoint {
   image?: string;
   borderThickness?: number;
   borderBlur?: number;
+  width?: number;
+  height?: number;
 }
 
 interface GradientCanvasProps {
@@ -382,6 +384,8 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
         const borderThickness = point.borderThickness || 8;
         const radius = point.radius;
         const imageShape = point.shape || 'circle';
+        const width = point.width || radius * 2;
+        const height = point.height || radius * 2;
 
         ctx.save();
 
@@ -408,8 +412,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
         if (imageShape === 'circle') {
           ctx.arc(screenX, screenY, radius, 0, Math.PI * 2);
         } else if (imageShape === 'square') {
-          const size = radius * 2;
-          ctx.rect(screenX - size / 2, screenY - size / 2, size, size);
+          ctx.rect(screenX - width / 2, screenY - height / 2, width, height);
         }
         ctx.lineWidth = borderThickness * 2;
         ctx.strokeStyle = gradient;
@@ -423,20 +426,33 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
         if (imageShape === 'circle') {
           ctx.arc(screenX, screenY, radius - borderThickness, 0, Math.PI * 2);
         } else if (imageShape === 'square') {
-          const size = (radius - borderThickness) * 2;
-          ctx.rect(screenX - size / 2, screenY - size / 2, size, size);
+          const innerWidth = width - borderThickness * 2;
+          const innerHeight = height - borderThickness * 2;
+          ctx.rect(screenX - innerWidth / 2, screenY - innerHeight / 2, innerWidth, innerHeight);
         }
         ctx.clip();
 
         // Draw image inside shape
-        const imgSize = (radius - borderThickness) * 2;
-        ctx.drawImage(
-          img,
-          screenX - imgSize / 2,
-          screenY - imgSize / 2,
-          imgSize,
-          imgSize
-        );
+        if (imageShape === 'circle') {
+          const imgSize = (radius - borderThickness) * 2;
+          ctx.drawImage(
+            img,
+            screenX - imgSize / 2,
+            screenY - imgSize / 2,
+            imgSize,
+            imgSize
+          );
+        } else if (imageShape === 'square') {
+          const innerWidth = width - borderThickness * 2;
+          const innerHeight = height - borderThickness * 2;
+          ctx.drawImage(
+            img,
+            screenX - innerWidth / 2,
+            screenY - innerHeight / 2,
+            innerWidth,
+            innerHeight
+          );
+        }
 
         ctx.restore();
       }
@@ -804,7 +820,11 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
                   width={1200}
                   height={800}
                   className="absolute inset-0 w-full h-full"
-                  style={{ cursor: cursorStyle }}
+                  style={{ 
+                    cursor: cursorStyle,
+                    transform: `scale(${zoom})`,
+                    transformOrigin: 'center center'
+                  }}
                   onClick={handleCanvasClick}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleCanvasMouseMove}
@@ -817,6 +837,10 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
                   width={1200}
                   height={800}
                   className="absolute inset-0 w-full h-full pointer-events-none"
+                  style={{ 
+                    transform: `scale(${zoom})`,
+                    transformOrigin: 'center center'
+                  }}
                   data-testid="canvas-labels"
                 />
               </div>
@@ -835,15 +859,15 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
             </ContextMenuContent>
           </ContextMenu>
 
-          <div className="absolute bottom-4 right-4 flex items-center gap-2 bg-black/40 backdrop-blur-sm rounded-md px-3 py-2">
+          <div className="absolute bottom-4 right-4 flex items-center gap-2 bg-black/60 backdrop-blur-sm rounded-md px-3 py-2">
             <Button
               size="icon"
               variant="ghost"
-              className="h-8 w-8"
+              className="h-8 w-8 text-white hover:text-white hover:bg-white/20"
               onClick={() => setZoom(Math.max(0.5, zoom - 0.1))}
               data-testid="button-zoom-out"
             >
-              <Minus className="w-3 h-3" />
+              <Minus className="w-4 h-4" />
             </Button>
             <span className="text-xs text-white font-mono w-12 text-center" data-testid="text-zoom">
               {Math.round(zoom * 100)}%
@@ -851,11 +875,11 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
             <Button
               size="icon"
               variant="ghost"
-              className="h-8 w-8"
+              className="h-8 w-8 text-white hover:text-white hover:bg-white/20"
               onClick={() => setZoom(Math.min(2, zoom + 0.1))}
               data-testid="button-zoom-in"
             >
-              <Plus className="w-3 h-3" />
+              <Plus className="w-4 h-4" />
             </Button>
           </div>
 

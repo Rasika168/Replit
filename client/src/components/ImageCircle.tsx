@@ -57,6 +57,9 @@ export default function ImageCircle({ point, onUpdate }: ImageCircleProps) {
   const borderThickness = point.borderThickness || 8;
   const borderBlur = point.borderBlur || 0;
   const imageShape = point.shape || 'circle';
+  const width = point.width || point.radius * 2;
+  const height = point.height || point.radius * 2;
+  const previewSize = imageShape === 'square' ? Math.max(width, height) / 2 : 200;
 
   const getShapeClasses = () => {
     switch (imageShape) {
@@ -77,7 +80,10 @@ export default function ImageCircle({ point, onUpdate }: ImageCircleProps) {
         <div className="relative flex items-center justify-center p-4 border-2 border-dashed border-border rounded-lg">
           {previewUrl ? (
             <div className="relative">
-              <div className="relative" style={{ width: '200px', height: '200px' }}>
+              <div className="relative" style={{ 
+                width: imageShape === 'square' ? `${width / 2}px` : '200px', 
+                height: imageShape === 'square' ? `${height / 2}px` : '200px' 
+              }}>
                 {/* Gradient border with blur */}
                 <div 
                   className={`absolute inset-0 ${getShapeClasses()}`}
@@ -136,27 +142,66 @@ export default function ImageCircle({ point, onUpdate }: ImageCircleProps) {
 
       {previewUrl && (
         <>
-          <div className="pt-4 border-t border-border">
-            <Label className="text-xs uppercase tracking-wide mb-2 block">Shape</Label>
-            <Select value={imageShape} onValueChange={(value) => onUpdate({ shape: value as 'circle' | 'square' })}>
-              <SelectTrigger data-testid="select-image-shape">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="circle">
-                  <div className="flex items-center gap-2">
-                    <Circle className="w-4 h-4" />
-                    Circle
+          <div className="pt-4 border-t border-border space-y-4">
+            <div>
+              <Label className="text-xs uppercase tracking-wide mb-2 block">Shape</Label>
+              <Select value={imageShape} onValueChange={(value) => onUpdate({ shape: value as 'circle' | 'square' })}>
+                <SelectTrigger data-testid="select-image-shape">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="circle">
+                    <div className="flex items-center gap-2">
+                      <Circle className="w-4 h-4" />
+                      Circle
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="square">
+                    <div className="flex items-center gap-2">
+                      <Square className="w-4 h-4" />
+                      Square
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {imageShape === 'square' && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label className="text-xs uppercase tracking-wide">Width</Label>
+                    <span className="text-xs text-muted-foreground font-mono" data-testid="text-shape-width">
+                      {point.width || point.radius * 2}px
+                    </span>
                   </div>
-                </SelectItem>
-                <SelectItem value="square">
-                  <div className="flex items-center gap-2">
-                    <Square className="w-4 h-4" />
-                    Square
+                  <Slider
+                    value={[point.width || point.radius * 2]}
+                    onValueChange={([v]) => onUpdate({ width: v })}
+                    min={50}
+                    max={600}
+                    step={5}
+                    data-testid="slider-shape-width"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label className="text-xs uppercase tracking-wide">Height</Label>
+                    <span className="text-xs text-muted-foreground font-mono" data-testid="text-shape-height">
+                      {point.height || point.radius * 2}px
+                    </span>
                   </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
+                  <Slider
+                    value={[point.height || point.radius * 2]}
+                    onValueChange={([v]) => onUpdate({ height: v })}
+                    min={50}
+                    max={600}
+                    step={5}
+                    data-testid="slider-shape-height"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="pt-4 border-t border-border">
