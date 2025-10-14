@@ -41,6 +41,19 @@ Preferred communication style: Simple, everyday language.
   - Shape variants (blob/circle/square)
   - Gradient type per node (solid/linear/radial)
   - Focus point adjustment for directional gradients
+- Interactive gradient stop slider (linear/radial gradients):
+  - Draggable color stops with position controls (0-100%)
+  - Add/remove gradient stops dynamically
+  - HEX color input for each stop
+  - Real-time gradient preview
+  - Support for multiple color stops (up to 5)
+- Image circle with gradient border:
+  - Image upload functionality
+  - Circular preview with customizable gradient border
+  - Adjustable border thickness (2-30px)
+  - Border blur effect (0-20px)
+  - Gradient border uses same stop slider controls
+  - Separate rendering layers to keep image sharp while blurring border
 - Context menu support for node operations (duplicate, delete)
 - Undo/redo functionality
 - Real-time gradient mesh rendering
