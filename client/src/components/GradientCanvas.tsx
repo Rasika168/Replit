@@ -373,7 +373,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
       ctx.globalCompositeOperation = 'source-over';
     });
 
-    // Render image circles with gradient borders
+    // Render image shapes with gradient borders
     points.forEach(point => {
       if (point.image && loadedImages.has(point.image)) {
         const screenX = point.x + pan.x;
@@ -381,6 +381,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
         const img = loadedImages.get(point.image)!;
         const borderThickness = point.borderThickness || 8;
         const radius = point.radius;
+        const imageShape = point.shape || 'circle';
 
         ctx.save();
 
@@ -402,9 +403,14 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
           ctx.filter = `blur(${point.borderBlur}px)`;
         }
 
-        // Draw gradient border circle
+        // Draw gradient border based on shape
         ctx.beginPath();
-        ctx.arc(screenX, screenY, radius, 0, Math.PI * 2);
+        if (imageShape === 'circle') {
+          ctx.arc(screenX, screenY, radius, 0, Math.PI * 2);
+        } else if (imageShape === 'square') {
+          const size = radius * 2;
+          ctx.rect(screenX - size / 2, screenY - size / 2, size, size);
+        }
         ctx.lineWidth = borderThickness * 2;
         ctx.strokeStyle = gradient;
         ctx.stroke();
@@ -412,12 +418,17 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
         // Reset filter
         ctx.filter = 'none';
 
-        // Clip to inner circle for image
+        // Clip to inner shape for image
         ctx.beginPath();
-        ctx.arc(screenX, screenY, radius - borderThickness, 0, Math.PI * 2);
+        if (imageShape === 'circle') {
+          ctx.arc(screenX, screenY, radius - borderThickness, 0, Math.PI * 2);
+        } else if (imageShape === 'square') {
+          const size = (radius - borderThickness) * 2;
+          ctx.rect(screenX - size / 2, screenY - size / 2, size, size);
+        }
         ctx.clip();
 
-        // Draw image inside circle
+        // Draw image inside shape
         const imgSize = (radius - borderThickness) * 2;
         ctx.drawImage(
           img,
