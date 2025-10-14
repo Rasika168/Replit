@@ -459,26 +459,32 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
 
           const focusX = screenX + point.focusX;
           const focusY = screenY + point.focusY;
-          ctx.fillStyle = '#ec4899';
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.arc(focusX, focusY, 6, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
           
+          // Draw direction line from main point to focus point
           ctx.strokeStyle = '#ec4899';
-          ctx.lineWidth = 1;
-          ctx.setLineDash([3, 3]);
+          ctx.lineWidth = 2;
+          ctx.setLineDash([5, 5]);
           ctx.beginPath();
           ctx.moveTo(screenX, screenY);
           ctx.lineTo(focusX, focusY);
           ctx.stroke();
           ctx.setLineDash([]);
+          
+          // Draw focus point with glow effect
+          ctx.shadowColor = '#ec4899';
+          ctx.shadowBlur = draggingFocus === point.id ? 15 : 8;
+          ctx.fillStyle = '#ec4899';
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(focusX, focusY, draggingFocus === point.id ? 9 : 8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.shadowBlur = 0;
         }
       });
     }
-  }, [points, selectedPoint, pan, showGrid, gridSize, gridOpacity, gridColor, showOverlays, backgroundColor, loadedImages]);
+  }, [points, selectedPoint, pan, showGrid, gridSize, gridOpacity, gridColor, showOverlays, backgroundColor, loadedImages, draggingFocus]);
 
   const renderLabels = useCallback(() => {
     const canvas = textCanvasRef.current;
@@ -571,7 +577,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
     } else if (hovered?.type === 'radius') {
       setCursorStyle('nwse-resize');
     } else if (hovered?.type === 'focus') {
-      setCursorStyle('crosshair');
+      setCursorStyle('move');
     } else {
       setCursorStyle('crosshair');
     }
