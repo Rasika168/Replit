@@ -31,10 +31,9 @@ export default function GradientStopSlider({
 
   const getGradientCSS = useCallback(() => {
     const colorStops = sortedStops.map(stop => `${stop.color} ${stop.position}%`).join(', ');
-    return gradientType === 'linear'
-      ? `linear-gradient(to right, ${colorStops})`
-      : `radial-gradient(circle, ${colorStops})`;
-  }, [sortedStops, gradientType]);
+    // Always use linear gradient for the slider, regardless of gradient type
+    return `linear-gradient(to right, ${colorStops})`;
+  }, [sortedStops]);
 
   const handleSliderClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (draggingStopId) return;
