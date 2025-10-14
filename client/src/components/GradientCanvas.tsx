@@ -31,6 +31,7 @@ export interface GradientStop {
   id: string;
   color: string;
   position: number;
+  alpha?: number;
 }
 
 export interface GradientPoint {
@@ -291,17 +292,33 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
       
       // Add color stops based on whether it's a multi-color gradient or solid
       if (point.gradientType !== 'solid' && colors.length >= 2) {
-        // Multi-color gradient
-        colors.forEach((color, i) => {
-          const rgb = hexToRgb(color);
-          if (rgb) {
-            const position = i / (colors.length - 1);
-            const opacity = point.edgeType === 'soft' 
-              ? point.opacity * (1 - position)
-              : (position < 0.8 ? point.opacity : point.opacity * (1 - (position - 0.8) / 0.2));
-            gradient.addColorStop(position, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`);
-          }
-        });
+        // Multi-color gradient - use actual gradient stops with positions
+        if (point.gradientStops && point.gradientStops.length >= 2) {
+          const sortedStops = [...point.gradientStops].sort((a, b) => a.position - b.position);
+          sortedStops.forEach((stop) => {
+            const rgb = hexToRgb(stop.color);
+            if (rgb) {
+              const position = stop.position / 100; // Convert percentage to 0-1 range
+              const stopAlpha = stop.alpha !== undefined ? stop.alpha / 100 : 1;
+              const opacity = point.edgeType === 'soft' 
+                ? point.opacity * stopAlpha * (1 - position)
+                : (position < 0.8 ? point.opacity * stopAlpha : point.opacity * stopAlpha * (1 - (position - 0.8) / 0.2));
+              gradient.addColorStop(position, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`);
+            }
+          });
+        } else {
+          // Fallback to evenly-spaced colors if gradientStops not available
+          colors.forEach((color, i) => {
+            const rgb = hexToRgb(color);
+            if (rgb) {
+              const position = i / (colors.length - 1);
+              const opacity = point.edgeType === 'soft' 
+                ? point.opacity * (1 - position)
+                : (position < 0.8 ? point.opacity : point.opacity * (1 - (position - 0.8) / 0.2));
+              gradient.addColorStop(position, `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${opacity})`);
+            }
+          });
+        }
       } else {
         // Single color gradient
         const color = hexToRgb(point.color);
