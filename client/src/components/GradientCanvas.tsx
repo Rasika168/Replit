@@ -188,11 +188,12 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
         const screenX = point.x + pan.x;
         const screenY = point.y + pan.y;
         
-        // Check pink focus handle (center gradient direction handle)
+        // Check pink focus handle with larger hit area for easier interaction
         const focusX = screenX + point.focusX;
         const focusY = screenY + point.focusY;
         const focusDistance = Math.sqrt((focusX - x) ** 2 + (focusY - y) ** 2);
-        if (focusDistance <= 15) {
+        // Use 12px for hover (larger than visual 10px) to make it easier to grab
+        if (focusDistance <= 12) {
           return { type: 'focus' as const, id: point.id };
         }
         
@@ -204,14 +205,15 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
       }
     }
     
-    // Check points (circumference detection)
+    // Check points (circumference detection with better hit area)
     for (const point of points) {
       const screenX = point.x + pan.x;
       const screenY = point.y + pan.y;
       
-      // Increased detection radius to include the point's visual circumference (8px radius + 3px stroke)
+      // Detect hover within the point's circumference (8px visual radius + 4px buffer)
       const pointDistance = Math.sqrt((screenX - x) ** 2 + (screenY - y) ** 2);
-      if (pointDistance <= 12) {
+      // Allow dragging when cursor is within 14px of the point center (covers the 8px circle + extra buffer)
+      if (pointDistance <= 14) {
         return { type: 'point' as const, id: point.id };
       }
     }
