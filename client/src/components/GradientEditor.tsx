@@ -287,6 +287,20 @@ export default function GradientEditor({
     }
   }, [pickerDragging, handlePickerDrag, handlePickerDragEnd]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedStopId && stops.length > 2) {
+        e.preventDefault();
+        handleRemoveStop(selectedStopId);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedStopId, stops.length]);
+
   if (!selectedStop) return null;
 
   const currentRgb = hexToRgb(selectedStop.color);
@@ -362,7 +376,7 @@ export default function GradientEditor({
           </div>
         </div>
         <p className="text-xs text-muted-foreground mt-3">
-          Click to add stops • Drag to reposition
+          Click to add stops • Drag to reposition • Press Delete to remove
         </p>
       </div>
 
