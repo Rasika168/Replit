@@ -110,7 +110,7 @@ export default function ColorPicker({ point, onUpdate, onClose, hideClose }: Col
       <div className="space-y-3">
         <div>
           <Label className="text-xs uppercase tracking-wide mb-2 block">Gradient Type</Label>
-          <div className="space-y-2">
+          <div className="flex items-center gap-6">
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="solid"
