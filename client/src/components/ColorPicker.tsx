@@ -148,7 +148,13 @@ export default function ColorPicker({ point, onUpdate, onClose, hideClose }: Col
                 ]}
                 onChange={(stops) => {
                   const colors = stops.map(s => s.color);
-                  onUpdate({ gradientStops: stops, gradientColors: colors });
+                  const sortedStops = [...stops].sort((a, b) => a.position - b.position);
+                  const firstColor = sortedStops.length > 0 ? sortedStops[0].color : point.color;
+                  onUpdate({ 
+                    gradientStops: stops, 
+                    gradientColors: colors,
+                    color: firstColor
+                  });
                 }}
                 gradientType={point.gradientType as 'linear' | 'radial'}
                 onGradientTypeChange={(type) => onUpdate({ gradientType: type })}
