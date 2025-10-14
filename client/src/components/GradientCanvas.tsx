@@ -197,7 +197,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
         const focusX = screenX + point.focusX;
         const focusY = screenY + point.focusY;
         const focusDistance = Math.sqrt((focusX - x) ** 2 + (focusY - y) ** 2);
-        if (focusDistance <= 6) {
+        if (focusDistance <= 10) {
           return { type: 'focus' as const, id: point.id };
         }
       }
