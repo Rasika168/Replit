@@ -184,10 +184,15 @@ export default function GradientStopSlider({
         <div className="space-y-2 max-h-64 overflow-y-auto">
           {sortedStops.map((stop, index) => (
             <div key={stop.id} className="flex items-center gap-2 p-2 rounded-md border border-border">
-              <div
-                className="w-8 h-8 rounded border-2 border-border flex-shrink-0"
-                style={{ backgroundColor: stop.color }}
-              />
+              <div className="relative flex-shrink-0">
+                <Input
+                  type="color"
+                  value={stop.color}
+                  onChange={(e) => handleColorChange(stop.id, e.target.value)}
+                  className="w-8 h-8 p-0 border-2 border-border rounded cursor-pointer"
+                  data-testid={`input-stop-color-picker-${stop.id}`}
+                />
+              </div>
               <div className="flex-1 space-y-1">
                 <Input
                   value={stop.color}

@@ -128,8 +128,8 @@ export default function ImageCircle({ point, onUpdate }: ImageCircleProps) {
                 const colors = stops.map(s => s.color);
                 onUpdate({ gradientStops: stops, gradientColors: colors });
               }}
-              gradientType="linear"
-              onGradientTypeChange={() => {}}
+              gradientType={point.gradientType as 'linear' | 'radial'}
+              onGradientTypeChange={(type) => onUpdate({ gradientType: type })}
             />
           </div>
 
