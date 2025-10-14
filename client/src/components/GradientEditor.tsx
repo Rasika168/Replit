@@ -307,26 +307,6 @@ export default function GradientEditor({
 
   return (
     <div className="space-y-6">
-      {/* Gradient Type Toggle */}
-      <div>
-        <Label className="text-xs uppercase tracking-wide mb-2 block">Gradient Type</Label>
-        <RadioGroup
-          value={gradientType}
-          onValueChange={(value) => onGradientTypeChange(value as 'linear' | 'radial')}
-          className="flex gap-4"
-          data-testid="radio-gradient-type"
-        >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="linear" id="linear" data-testid="radio-linear" />
-            <Label htmlFor="linear" className="text-sm font-normal cursor-pointer">Linear</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="radial" id="radial" data-testid="radio-radial" />
-            <Label htmlFor="radial" className="text-sm font-normal cursor-pointer">Radial</Label>
-          </div>
-        </RadioGroup>
-      </div>
-
       {/* Gradient Slider */}
       <div>
         <Label className="text-xs uppercase tracking-wide mb-2 block">Gradient Slider</Label>

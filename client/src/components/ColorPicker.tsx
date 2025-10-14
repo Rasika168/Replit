@@ -42,16 +42,7 @@ export default function ColorPicker({ point, onUpdate, onClose, hideClose }: Col
       reader.onloadend = () => {
         const dataUrl = reader.result as string;
         setPreviewUrl(dataUrl);
-        const imageShape = point.shape || 'circle';
-        if (imageShape === 'square') {
-          onUpdate({ 
-            image: dataUrl, 
-            width: point.width || point.radius * 2,
-            height: point.height || point.radius * 2
-          });
-        } else {
-          onUpdate({ image: dataUrl });
-        }
+        onUpdate({ image: dataUrl });
       };
       reader.readAsDataURL(file);
     }
@@ -130,7 +121,7 @@ export default function ColorPicker({ point, onUpdate, onClose, hideClose }: Col
                 data-testid="checkbox-solid"
               />
               <Label htmlFor="solid" className="text-sm font-normal cursor-pointer">
-                Solid Color
+                Solid
               </Label>
             </div>
             <div className="flex items-center space-x-2">
@@ -143,7 +134,7 @@ export default function ColorPicker({ point, onUpdate, onClose, hideClose }: Col
                 data-testid="checkbox-linear"
               />
               <Label htmlFor="linear" className="text-sm font-normal cursor-pointer">
-                Linear Gradient
+                Linear
               </Label>
             </div>
             <div className="flex items-center space-x-2">
@@ -156,7 +147,7 @@ export default function ColorPicker({ point, onUpdate, onClose, hideClose }: Col
                 data-testid="checkbox-radial"
               />
               <Label htmlFor="radial" className="text-sm font-normal cursor-pointer">
-                Radial Gradient
+                Radial
               </Label>
             </div>
           </div>

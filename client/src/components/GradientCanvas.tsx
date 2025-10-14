@@ -354,6 +354,10 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
       } else if (point.shape === 'square') {
         const size = point.radius * 2;
         ctx.fillRect(screenX - size / 2, screenY - size / 2, size, size);
+      } else if (point.shape === 'rectangle') {
+        const width = point.radius * 3;
+        const height = point.radius * 1.5;
+        ctx.fillRect(screenX - width / 2, screenY - height / 2, width, height);
       }
       
       ctx.globalCompositeOperation = 'source-over';
@@ -468,6 +472,10 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
           } else if (point.shape === 'square') {
             const size = point.radius * 2;
             ctx.strokeRect(screenX - size / 2, screenY - size / 2, size, size);
+          } else if (point.shape === 'rectangle') {
+            const width = point.radius * 3;
+            const height = point.radius * 1.5;
+            ctx.strokeRect(screenX - width / 2, screenY - height / 2, width, height);
           }
           
           ctx.setLineDash([]);
@@ -581,6 +589,23 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
       onPointsChange(points);
     }
   }, [points, onPointsChange]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'Z') {
+        e.preventDefault();
+        redo();
+      } else if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault();
+        undo();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [undo, redo]);
 
   const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const pos = getCursorPosition(e);
