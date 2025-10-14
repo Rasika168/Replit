@@ -234,32 +234,6 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
     ctx.fillStyle = backgroundColor;
     ctx.fillRect(0, 0, width, height);
 
-    if (showGrid) {
-      const rgb = hexToRgb(gridColor);
-      ctx.strokeStyle = rgb 
-        ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${gridOpacity})`
-        : `rgba(64, 64, 64, ${gridOpacity})`;
-      ctx.lineWidth = 1;
-      
-      const gridSpacing = gridSize;
-      const offsetX = pan.x % gridSpacing;
-      const offsetY = pan.y % gridSpacing;
-      
-      for (let x = offsetX; x <= width; x += gridSpacing) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-        ctx.stroke();
-      }
-      
-      for (let y = offsetY; y <= height; y += gridSpacing) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-        ctx.stroke();
-      }
-    }
-
     // Draw center quadrant lines
     ctx.strokeStyle = 'rgba(128, 128, 128, 0.4)';
     ctx.lineWidth = 2;
@@ -525,7 +499,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
         }
       });
     }
-  }, [points, selectedPoint, pan, showGrid, gridSize, gridOpacity, gridColor, showOverlays, backgroundColor, loadedImages, draggingFocus]);
+  }, [points, selectedPoint, pan, showOverlays, backgroundColor, loadedImages, draggingFocus]);
 
   const renderLabels = useCallback(() => {
     const canvas = textCanvasRef.current;
@@ -815,7 +789,21 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
 
         <div 
           className="relative flex-1 overflow-hidden"
-          style={{ backgroundColor }}
+          style={{ 
+            backgroundColor,
+            backgroundImage: showGrid ? (() => {
+              const rgb = hexToRgb(gridColor);
+              const gridColorWithOpacity = rgb 
+                ? `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${gridOpacity})`
+                : `rgba(64, 64, 64, ${gridOpacity})`;
+              return `
+                linear-gradient(${gridColorWithOpacity} 1px, transparent 1px),
+                linear-gradient(90deg, ${gridColorWithOpacity} 1px, transparent 1px)
+              `;
+            })() : 'none',
+            backgroundSize: showGrid ? `${gridSize}px ${gridSize}px` : undefined,
+            backgroundPosition: showGrid ? `${pan.x % gridSize}px ${pan.y % gridSize}px` : undefined
+          }}
         >
           <ContextMenu>
             <ContextMenuTrigger asChild>

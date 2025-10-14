@@ -9,6 +9,7 @@ An interactive freeform gradient canvas tool for creating custom mesh gradients 
 ### October 14, 2025
 - **Enhanced Drag-and-Drop Interaction**: Improved hover detection for gradient points (14px radius) and pink focus handles (12px radius) for easier grab-and-drag functionality
 - **Zoom Behavior Enhancement**: Fixed canvas container layout so background color properly extends beyond the canvas when zooming out below 100%, providing a consistent viewport experience
+- **Grid Display Improvement**: Migrated grid rendering from canvas to CSS background pattern, ensuring the grid follows the background across the entire viewport at all zoom levels
 - **UX Improvements**: Better cursor feedback when hovering over draggable elements (points and focus handles)
 
 ## User Preferences
