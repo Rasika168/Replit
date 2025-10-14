@@ -691,8 +691,8 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
   const selectedPointData = points.find(p => p.id === selectedPoint);
 
   return (
-    <div className="flex h-screen w-full bg-background overflow-hidden">
-      <div className="flex flex-col flex-1 h-screen">
+    <div className="flex h-screen w-full bg-background">
+      <div className="flex flex-col flex-1 h-screen sticky top-0">
         <header className="flex items-center justify-between h-12 px-4 border-b border-border bg-card">
           <h1 className="text-sm font-semibold">Gradient Canvas</h1>
 
