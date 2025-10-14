@@ -267,33 +267,52 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
       const focusX = screenX + point.focusX;
       const focusY = screenY + point.focusY;
       
-      // Determine colors based on gradient type
-      const colors = point.gradientType !== 'solid' && point.gradientColors?.length >= 2
-        ? point.gradientColors
-        : [point.color, point.color];
+      // Apply gradient based on shape
+      ctx.globalCompositeOperation = 'screen';
       
-      // Create gradient based on gradientType, not shape
-      let gradient: CanvasGradient;
-      
-      if (point.gradientType === 'linear') {
-        // Linear gradient from focus to edge
-        const angle = Math.atan2(point.focusY, point.focusX);
-        const startX = screenX + Math.cos(angle) * point.radius;
-        const startY = screenY + Math.sin(angle) * point.radius;
-        const endX = screenX - Math.cos(angle) * point.radius;
-        const endY = screenY - Math.sin(angle) * point.radius;
-        gradient = ctx.createLinearGradient(startX, startY, endX, endY);
+      // For solid type, just use solid color without gradient
+      if (point.gradientType === 'solid') {
+        const color = hexToRgb(point.color);
+        if (color) {
+          ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${point.opacity})`;
+        }
       } else {
-        // Radial gradient (default for solid and radial)
-        gradient = ctx.createRadialGradient(
-          focusX, focusY, 0,
-          screenX, screenY, point.radius
-        );
-      }
-      
-      // Add color stops based on whether it's a multi-color gradient or solid
-      if (point.gradientType !== 'solid' && colors.length >= 2) {
-        // Multi-color gradient - use actual gradient stops with positions
+        // Create gradient based on gradientType and shape
+        let gradient: CanvasGradient;
+        
+        // Determine dimensions based on shape
+        let gradientWidth = point.radius;
+        let gradientHeight = point.radius;
+        
+        if (point.shape === 'rectangle') {
+          gradientWidth = point.radius * 3;
+          gradientHeight = point.radius * 1.5;
+        } else if (point.shape === 'square') {
+          gradientWidth = point.radius * 2;
+          gradientHeight = point.radius * 2;
+        }
+        
+        if (point.gradientType === 'linear') {
+          // Linear gradient from focus to edge
+          const angle = Math.atan2(point.focusY, point.focusX);
+          const maxDim = Math.max(gradientWidth, gradientHeight);
+          const startX = screenX + Math.cos(angle) * maxDim;
+          const startY = screenY + Math.sin(angle) * maxDim;
+          const endX = screenX - Math.cos(angle) * maxDim;
+          const endY = screenY - Math.sin(angle) * maxDim;
+          gradient = ctx.createLinearGradient(startX, startY, endX, endY);
+        } else {
+          // Radial gradient for radial type
+          const maxDim = Math.max(gradientWidth, gradientHeight);
+          gradient = ctx.createRadialGradient(
+            focusX, focusY, 0,
+            screenX, screenY, maxDim
+          );
+        }
+        
+        // Add color stops for multi-color gradients
+        const colors = point.gradientColors?.length >= 2 ? point.gradientColors : [point.color, point.color];
+        
         if (point.gradientStops && point.gradientStops.length >= 2) {
           const sortedStops = [...point.gradientStops].sort((a, b) => a.position - b.position);
           sortedStops.forEach((stop) => {
@@ -320,27 +339,13 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
             }
           });
         }
-      } else {
-        // Single color gradient
-        const color = hexToRgb(point.color);
-        if (color) {
-          if (point.edgeType === 'soft') {
-            gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${point.opacity})`);
-            gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
-          } else {
-            gradient.addColorStop(0, `rgba(${color.r}, ${color.g}, ${color.b}, ${point.opacity})`);
-            gradient.addColorStop(0.8, `rgba(${color.r}, ${color.g}, ${color.b}, ${point.opacity})`);
-            gradient.addColorStop(1, `rgba(${color.r}, ${color.g}, ${color.b}, 0)`);
-          }
-        }
+        
+        ctx.fillStyle = gradient;
       }
       
-      // Apply gradient based on shape
-      ctx.globalCompositeOperation = 'screen';
-      ctx.fillStyle = gradient;
-      
+      // Draw shape
       if (point.shape === 'blob') {
-        // For blob shapes, use clipping to constrain the gradient
+        // For blob shapes, use clipping to constrain the fill
         ctx.save();
         ctx.beginPath();
         ctx.arc(screenX, screenY, point.radius, 0, Math.PI * 2);
