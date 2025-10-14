@@ -231,8 +231,9 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
     const { width, height } = canvas;
     ctx.clearRect(0, 0, width, height);
 
-    ctx.fillStyle = backgroundColor;
-    ctx.fillRect(0, 0, width, height);
+    // Don't paint background - let CSS grid show through
+    // ctx.fillStyle = backgroundColor;
+    // ctx.fillRect(0, 0, width, height);
 
     // Draw center quadrant lines
     ctx.strokeStyle = 'rgba(128, 128, 128, 0.4)';
