@@ -215,11 +215,9 @@ export default function GradientEditor({
   };
 
   const handleRemoveStop = (stopId: string) => {
-    if (stops.length > 2) {
-      onChange(stops.filter(stop => stop.id !== stopId));
-      if (selectedStopId === stopId) {
-        setSelectedStopId(stops.find(s => s.id !== stopId)?.id || null);
-      }
+    onChange(stops.filter(stop => stop.id !== stopId));
+    if (selectedStopId === stopId) {
+      setSelectedStopId(stops.find(s => s.id !== stopId)?.id || null);
     }
   };
 
@@ -288,7 +286,7 @@ export default function GradientEditor({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedStopId && stops.length > 2) {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedStopId) {
         e.preventDefault();
         handleRemoveStop(selectedStopId);
       }
@@ -621,20 +619,18 @@ export default function GradientEditor({
                     <span className="text-xs text-muted-foreground">%</span>
                   </div>
                 </div>
-                {stops.length > 2 && (
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveStop(stop.id);
-                    }}
-                    className="h-8 w-8 flex-shrink-0"
-                    data-testid={`button-remove-stop-${stop.id}`}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                )}
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemoveStop(stop.id);
+                  }}
+                  className="h-8 w-8 flex-shrink-0"
+                  data-testid={`button-remove-stop-${stop.id}`}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
               </div>
             ))}
           </div>
