@@ -5,8 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { X, Circle, Square, Waves } from 'lucide-react';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { X } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -82,13 +81,7 @@ export default function ColorPicker({ point, onUpdate, onClose, hideClose }: Col
         </div>
       )}
 
-      <Tabs defaultValue="colors" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="colors" data-testid="tab-colors">Colors</TabsTrigger>
-          <TabsTrigger value="image" data-testid="tab-image">Image Circle</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="colors" className="space-y-3 mt-4">
+      <div className="space-y-3 mt-4">
         {point.gradientType === 'solid' && (
           <div>
             <Label className="text-xs uppercase tracking-wide mb-2 block">Gradient Type</Label>
@@ -279,93 +272,10 @@ export default function ColorPicker({ point, onUpdate, onClose, hideClose }: Col
             </div>
           </TabsContent>
         </Tabs>
-        </TabsContent>
 
-        <TabsContent value="image" className="space-y-3 mt-4">
-        <div>
-          <Label className="text-xs uppercase tracking-wide mb-2 block">Shape</Label>
-          <Select value={point.shape} onValueChange={(value) => onUpdate({ shape: value as 'blob' | 'circle' | 'square' })}>
-            <SelectTrigger data-testid="select-shape">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="blob">
-                <div className="flex items-center gap-2">
-                  <Waves className="w-4 h-4" />
-                  Blob
-                </div>
-              </SelectItem>
-              <SelectItem value="circle">
-                <div className="flex items-center gap-2">
-                  <Circle className="w-4 h-4" />
-                  Circle
-                </div>
-              </SelectItem>
-              <SelectItem value="square">
-                <div className="flex items-center gap-2">
-                  <Square className="w-4 h-4" />
-                  Square
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <Label className="text-xs uppercase tracking-wide">Opacity</Label>
-            <span className="text-xs text-muted-foreground font-mono" data-testid="text-opacity">
-              {Math.round(point.opacity * 100)}%
-            </span>
-          </div>
-          <Slider
-            value={[point.opacity * 100]}
-            onValueChange={([v]) => onUpdate({ opacity: v / 100 })}
-            max={100}
-            step={1}
-            data-testid="slider-opacity"
-          />
-        </div>
-
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <Label className="text-xs uppercase tracking-wide">Influence Radius</Label>
-            <span className="text-xs text-muted-foreground font-mono" data-testid="text-radius">
-              {Math.round(point.radius)}px
-            </span>
-          </div>
-          <Slider
-            value={[point.radius]}
-            onValueChange={([v]) => onUpdate({ radius: v })}
-            min={20}
-            max={400}
-            step={5}
-            data-testid="slider-radius"
-          />
-        </div>
-
-        <div>
-          <Label className="text-xs uppercase tracking-wide mb-2 block">Edge Type</Label>
-          <RadioGroup
-            value={point.edgeType}
-            onValueChange={(value) => onUpdate({ edgeType: value as 'soft' | 'hard' })}
-            data-testid="radio-edge-type"
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="soft" id="soft" data-testid="radio-soft" />
-              <Label htmlFor="soft" className="text-sm font-normal cursor-pointer">Soft Edge</Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="hard" id="hard" data-testid="radio-hard" />
-              <Label htmlFor="hard" className="text-sm font-normal cursor-pointer">Hard Edge</Label>
-            </div>
-          </RadioGroup>
-        </div>
-
-        <div>
+        <div className="pt-4 border-t border-border">
           <Label className="text-xs uppercase tracking-wide mb-2 block">
-            Gradient Direction
-            <span className="text-muted-foreground ml-1">(Focus Point)</span>
+            Focus Point
           </Label>
           <div className="text-xs text-muted-foreground mb-2">
             Drag the pink handle on canvas to adjust gradient direction
@@ -402,8 +312,7 @@ export default function ColorPicker({ point, onUpdate, onClose, hideClose }: Col
             Reset Focus
           </Button>
         </div>
-        </TabsContent>
-      </Tabs>
+      </div>
     </div>
   );
 }
