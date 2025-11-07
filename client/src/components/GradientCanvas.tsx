@@ -213,16 +213,50 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
       }
     }
     
-    // Check points (circumference detection with better hit area)
+    // Check points (outer circumference detection based on shape)
     for (const point of points) {
       const screenX = point.x + pan.x;
       const screenY = point.y + pan.y;
-      
-      // Detect hover within the point's circumference (8px visual radius + 4px buffer)
-      const pointDistance = Math.sqrt((screenX - x) ** 2 + (screenY - y) ** 2);
-      // Allow dragging when cursor is within 14px of the point center (covers the 8px circle + extra buffer)
-      if (pointDistance <= 14) {
+
+      // First check the small center point (8px visual radius + 6px buffer)
+      const centerDistance = Math.sqrt((screenX - x) ** 2 + (screenY - y) ** 2);
+      if (centerDistance <= 14) {
         return { type: 'point' as const, id: point.id };
+      }
+
+      // Check outer circumference based on shape and radius
+      const hitBuffer = 10; // Hit area buffer for easier interaction
+      if (point.shape === 'circle' || point.shape === 'blob') {
+        const outerDistance = Math.sqrt((screenX - x) ** 2 + (screenY - y) ** 2);
+        if (outerDistance >= point.radius - hitBuffer && outerDistance <= point.radius + hitBuffer) {
+          return { type: 'point' as const, id: point.id };
+        }
+      } else if (point.shape === 'square') {
+        const size = point.radius * 2;
+        const halfSize = size / 2;
+        const isNearEdge = (
+          (Math.abs(x - (screenX - halfSize)) <= hitBuffer && Math.abs(y - screenY) <= halfSize) ||
+          (Math.abs(x - (screenX + halfSize)) <= hitBuffer && Math.abs(y - screenY) <= halfSize) ||
+          (Math.abs(y - (screenY - halfSize)) <= hitBuffer && Math.abs(x - screenX) <= halfSize) ||
+          (Math.abs(y - (screenY + halfSize)) <= hitBuffer && Math.abs(x - screenX) <= halfSize)
+        );
+        if (isNearEdge) {
+          return { type: 'point' as const, id: point.id };
+        }
+      } else if (point.shape === 'rectangle') {
+        const width = point.radius * 3;
+        const height = point.radius * 1.5;
+        const halfWidth = width / 2;
+        const halfHeight = height / 2;
+        const isNearEdge = (
+          (Math.abs(x - (screenX - halfWidth)) <= hitBuffer && Math.abs(y - screenY) <= halfHeight) ||
+          (Math.abs(x - (screenX + halfWidth)) <= hitBuffer && Math.abs(y - screenY) <= halfHeight) ||
+          (Math.abs(y - (screenY - halfHeight)) <= hitBuffer && Math.abs(x - screenX) <= halfWidth) ||
+          (Math.abs(y - (screenY + halfHeight)) <= hitBuffer && Math.abs(x - screenX) <= halfWidth)
+        );
+        if (isNearEdge) {
+          return { type: 'point' as const, id: point.id };
+        }
       }
     }
     
@@ -369,7 +403,7 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
       ctx.globalCompositeOperation = 'source-over';
     });
 
-    // Render images without borders (simple clipped image with opacity)
+    // Render images without borders (simple clipped image with opacity and scale)
     points.forEach(point => {
       if (point.image && loadedImages.has(point.image)) {
         const screenX = point.x + pan.x;
@@ -377,7 +411,8 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
         const img = loadedImages.get(point.image)!;
         const radius = point.radius;
         const imageShape = point.shape || 'circle';
-        
+        const imageScale = point.imageScale || 1;
+
         // Use point.width/height if available, otherwise calculate from radius
         const width = point.width || (imageShape === 'rectangle' ? radius * 3 : radius * 2);
         const height = point.height || (imageShape === 'rectangle' ? radius * 1.5 : radius * 2);
@@ -398,9 +433,9 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
         }
         ctx.clip();
 
-        // Draw image inside shape
+        // Draw image inside shape with scale applied
         if (imageShape === 'circle' || imageShape === 'blob') {
-          const imgSize = radius * 2;
+          const imgSize = radius * 2 * imageScale;
           ctx.drawImage(
             img,
             screenX - imgSize / 2,
@@ -409,20 +444,24 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
             imgSize
           );
         } else if (imageShape === 'square') {
+          const scaledWidth = width * imageScale;
+          const scaledHeight = height * imageScale;
           ctx.drawImage(
             img,
-            screenX - width / 2,
-            screenY - height / 2,
-            width,
-            height
+            screenX - scaledWidth / 2,
+            screenY - scaledHeight / 2,
+            scaledWidth,
+            scaledHeight
           );
         } else if (imageShape === 'rectangle') {
+          const scaledWidth = width * imageScale;
+          const scaledHeight = height * imageScale;
           ctx.drawImage(
             img,
-            screenX - width / 2,
-            screenY - height / 2,
-            width,
-            height
+            screenX - scaledWidth / 2,
+            screenY - scaledHeight / 2,
+            scaledWidth,
+            scaledHeight
           );
         }
 
@@ -938,10 +977,11 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
 
       <div className="w-80 border-l border-border bg-card flex flex-col h-screen overflow-y-auto">
         <Tabs defaultValue="points" className="flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-3 rounded-none border-b border-border bg-transparent h-12 sticky top-0 bg-card z-10">
+          <TabsList className="grid w-full grid-cols-4 rounded-none border-b border-border bg-transparent h-12 sticky top-0 bg-card z-10">
             <TabsTrigger value="points" data-testid="tab-points">Points</TabsTrigger>
             <TabsTrigger value="canvas" data-testid="tab-canvas">Canvas</TabsTrigger>
             <TabsTrigger value="labels" data-testid="tab-labels">Labels</TabsTrigger>
+            <TabsTrigger value="maps" data-testid="tab-maps">Maps</TabsTrigger>
           </TabsList>
 
           <TabsContent value="points" className="p-4 space-y-4 mt-0">
@@ -1251,6 +1291,13 @@ export default function GradientCanvas({ onPointsChange }: GradientCanvasProps) 
                   />
                 </div>
               </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="maps" className="p-4 space-y-4 mt-0">
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wide mb-3">Map Management</h3>
+              <p className="text-sm text-muted-foreground">Map management coming soon. You will be able to create, save, and load different gradient map configurations.</p>
             </div>
           </TabsContent>
         </Tabs>
